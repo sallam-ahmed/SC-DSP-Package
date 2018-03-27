@@ -99,3 +99,10 @@ ENV/
 
 # mypy
 .mypy_cache/
+#IDES
+.vscode
+.spyproject
+_BACKUP
+_data
+*.png
+__deprecated
