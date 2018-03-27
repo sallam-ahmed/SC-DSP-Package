@@ -12,9 +12,11 @@ from SignalGenerator.iDSignalGenerator import DSignalGenerator
 from SignalGenerator.iDSignalGeneratorBinder import DSignalGeneratorEvents
 from SignalOperations._signal import DS_Signal, Signal
 from SignalOperations._signalParser import SignalParser
+from enum import Enum
 
 
 class MainInterfaceBinder:
+
     LoadedSignals = {}
     SignalPath = None
     app = None
@@ -34,8 +36,6 @@ class MainInterfaceBinder:
         self.app.OnSaveSignalButtonClicked = self.SaveSignal
         self.app.OnGeneratorOpenCommand = self.OpenGenerator
         self.app.OnExit = self.OnExit
-        self.app.OnChannelSelectedCommand = self.OnChannelSelectedCommand
-        self.app.OnPlotChannelButtonClicked = self.OnPlotChannelButtonClicked
         self.app.OnAddSignalsButtonClicked = self.AddSignals
         self.app.OnSubtractSignalsButtonClicked = self.SubtractSignals
         self.app.OnMultiplySignalsButtonClicked = self.MultiplySignals
@@ -85,7 +85,7 @@ class MainInterfaceBinder:
                 signalLabel = self.SignalPath.split('/')[-1].split('.')[0]
 
                 myMarkerIndex = np.random.randint(0, len(self.signalMarkers))
-                self.PlotSignal(signalData.GetData(), signalName=signalLabel,
+                self.PlotOnAxis(signalData.GetData(), axis_dim=(0, 0), signalName=signalLabel,
                                 signalMarker=self.signalMarkers[myMarkerIndex])
         else:
             print("Error")
@@ -103,15 +103,18 @@ class MainInterfaceBinder:
             bbox_to_anchor=(1.04, 0.5), loc="center left", borderaxespad=0)
         self.app.GetPlotter(plotterName)[1].draw()
 
-    def PlotSignalChannels(self, signal, channelsToPlot, plotterName="defaultPlotter"):
-        for i in channelsToPlot:
-            labelName = signal.signalName + "- C"+str(i+1)
-            if labelName not in self.plottedSignals:
-                self.PlotSignal(signal.signalChannels[i],
-                                plotterName=plotterName,
-                                signalMarker=signal.signalMarkers[i],
-                                signalName=labelName)
-                self.plottedSignals.append(labelName)
+    def PlotOnAxis(self, signalData=[], axis_dim=(1, 0), signalMarker='ob', signalName='label'):
+        yvals = []
+        xvals = []
+        for i in signalData:
+            xvals.append(i[0])
+            yvals.append(i[1])
+
+        self.app.GetAxis(axis_dim[0], axis_dim[1]).scatter(
+            xvals, yvals, marker=signalMarker[0], color=signalMarker[1], label=signalName)
+        self.app.GetAxis(axis_dim[0], axis_dim[1]).legend(
+            loc="upper left", borderaxespad=0, fancybox=True, framealpha=0.5)
+        self.app.repaint_axis()
 
     def SaveSignal(self):
         self.AddSignals()
@@ -126,11 +129,6 @@ class MainInterfaceBinder:
     def UpdateStatusText(self, text, fgColor='black'):
         self.app.GetStatusText().configure(text=text, fg=fgColor)
 
-    def OnChannelSelectedCommand(self, eventArgs):
-        control = eventArgs.widget
-        sel = control.curselection()
-        self.selectedChannels = [x for x in list(sel)]
-
     def AddChannelsToList(self, signal):
         lbox = self.app.GetChannelsListBox()
         for i in range(signal.channelsCount):
@@ -140,25 +138,24 @@ class MainInterfaceBinder:
         lbox = self.app.GetChannelsListBox()
         lbox.insert(tk.END, signal)
 
-    def OnPlotChannelButtonClicked(self):
-        if len(self.selectedChannels) == 0:
-            self.selectedChannels.append(0)
-        self.PlotSignalChannels(self.LoadedSignals[self.SignalPath],
-                                self.selectedChannels)
-
     def AddSignals(self):
         signals = self.__get_loaded_signals()
         final_result = signal_op.accumulate_signlas(signals)
 
-        self.PlotSignal(final_result, plotterName="resultPlotter",
+        selected_dim = self.app.GetStdOperationsAxis()
+        self.app.ChangeAxisTitle(selected_dim[0], selected_dim[1], "AX-{0} - Signals Addition".format(selected_dim))
+        self.PlotOnAxis(final_result, axis_dim=selected_dim,
                         signalMarker='Dr', signalName="Sum Result")
 
     def SubtractSignals(self):
         signals = self.__get_loaded_signals()
         final_result = signal_op.accumulate_signlas(signals, sign=-1)
 
-        self.PlotSignal(final_result, plotterName="resultPlotter",
-                        signalMarker='or', signalName="Subtract Result")
+        selected_dim = self.app.GetStdOperationsAxis()
+        self.app.ChangeAxisTitle(selected_dim[0], selected_dim[1], "AX-{0} - Signals Subtraction".format(selected_dim))
+
+        self.PlotOnAxis(final_result, axis_dim=selected_dim,
+                        signalMarker='or', signalName="Subtraction Result")
 
     def MultiplySignals(self):
         signals = self.__get_loaded_signals()
@@ -168,25 +165,28 @@ class MainInterfaceBinder:
 
         final_result = signal_op.multiply_signal(combined_signal, cnst)
 
-        self.PlotSignal(final_result, plotterName="resultPlotter",
+        selected_dim = self.app.GetStdOperationsAxis()
+        self.app.ChangeAxisTitle(selected_dim[0], selected_dim[1], "AX-{0} - Combined Signals Multiplication".format(selected_dim))
+
+        self.PlotOnAxis(final_result, axis_dim=selected_dim,
                         signalMarker='.b', signalName="Multiply Result")
 
     def QuantizeSignal(self):
-        if len(self.LoadedSignals) > 1:
-            raise "Cannont quantize more than one signal"
-
         signal = self.__get_loaded_signals()
 
         quantizationLevels = self.app.GetQuantizationLevel()
 
         quantized_signal, signal_encoding, mse = signal_op.quantize_signal(
-            signal[0], n=quantizationLevels, use_bit_mode=False)
+            signal[0], n=quantizationLevels, use_bit_mode=bool(self.app.GetBoolUseBitMode()))
 
         print("Error ", mse)
         print("Encoding ", signal_encoding)
 
-        self.PlotSignal(quantized_signal,
-                        plotterName="resultPlotter", signalName="Q")
+        selected_dim = self.app.GetQuantizeOperationsAxis()
+        self.app.ChangeAxisTitle(selected_dim[0], selected_dim[1], "AX-{0} - First Signal Quantization".format(selected_dim))
+
+        self.PlotOnAxis(quantized_signal, axis_dim=selected_dim,
+                        signalName='Quantized Signal', signalMarker='or')
 
     def OnQuantizeButtonBitsClicked(self):
         if len(self.LoadedSignals) > 1:

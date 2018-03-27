@@ -8,14 +8,12 @@ class MainInterface(tk.Tk):
     OnLoadSignalButtonClicked = None
     OnSaveSignalButtonClicked = None
     OnGeneratorOpenCommand = None
-    OnChannelSelectedCommand = None
     OnExit = None
-    OnPlotChannelButtonClicked = None
 # Manipulations
     OnAddSignalsButtonClicked = None
     OnSubtractSignalsButtonClicked = None
     OnMultiplySignalsButtonClicked = None
-  
+
     OnCombineSignals = None
     OnAccumulateSignals = None
 
@@ -84,19 +82,27 @@ class MainInterface(tk.Tk):
     def GetQuantizationBitsLevel(self):
         return 2**self.qLevelsBits.get()
 
+    def GetBoolUseBitMode(self):
+        return self.useBitModeVar.get()
     def ChangePlotterTitle(self, plotterName, plotterTitle):
         self.signalPlotters[plotterName][0].configure(title=plotterTitle)
 
     def DrawPlotters(self):
+        tk.Grid.rowconfigure(self.previewPanel, 1, weight=1)
         tk.Grid.columnconfigure(self.previewPanel, 1, weight=1)
-        GUI.DrawSignalPlot(self, name="defaultPlotter",
-                           signalData=[], position=(1, 0),
-                           owner=self.previewPanel, sticky=tk.NSEW)
+        GUI.DrawAxisArray(self, name='plotters_axis', position=(
+            1, 0), owner=self.previewPanel, columnSpan=2,  sticky=tk.NSEW)
 
-        GUI.DrawSignalPlot(self, name="resultPlotter",
-                           signalData=[],
-                           position=(1, 1), owner=self.previewPanel,
-                           text="Result View", sticky=tk.NSEW)
+    def ChangeAxisTitle(self, i, j, _title):
+        axis_array = self.signalPlotters['plotters_axis'][0]
+        axis_array[i, j].set(title=_title)
+        self.repaint_axis()
+
+    def repaint_axis(self):
+        self.signalPlotters['plotters_axis'][1].draw()
+
+    def GetAxis(self, i, j):
+        return self.signalPlotters['plotters_axis'][0][i,j]
 
     def DrawResultPlotter(self, xlabel, ylabel, _title):
         GUI.DrawSignalPlot(self, name="resultPlotter",
@@ -108,6 +114,31 @@ class MainInterface(tk.Tk):
         GUI.DrawSignalPlot(self, name="defaultPlotter",
                            signalData=[], position=(1, 0), xLabel=xlabel, yLabel=ylabel,
                            owner=self.previewPanel, sticky=tk.NSEW, text=_title)
+
+
+    def GetStdOperationsAxis(self):
+        ax_str = self.std_working_axis.get()
+        x = int(ax_str[1])
+        y = int(ax_str[3])
+        return (x,y)
+    
+    def GetQuantizeOperationsAxis(self):
+        ax_str = self.q_working_axis.get()
+        x = int(ax_str[1])
+        y = int(ax_str[3])
+        
+        return (x,y)    
+    def GetFourierOperationsAxis(self):
+        ax_str = self.f_working_axis.get()
+        x = int(ax_str[1])
+        y = int(ax_str[3])
+        return (x,y)
+    
+    def GetManipulationOperationsAxis(self):
+        ax_str = self.manp_working_axis.get()
+        x = int(ax_str[1])
+        y = int(ax_str[3])
+        return (x,y)
 ################################### Private ###################################
 ###############################################################################
 
@@ -159,11 +190,9 @@ class MainInterface(tk.Tk):
 
         quantize_submenu = tk.Menu(operations_menu, tearoff=0)
 
-#        quantize_submenu.add_checkbutton(label = "Use Bit Mode")
         quantize_submenu.add_command(
             label="Quantize Signal", command=self.OnQuantizeButtonClicked)
         operations_menu.add_cascade(label="Quantize", menu=quantize_submenu)
-####
         fourier_submenu = tk.Menu(operations_menu, tearoff=0)
         fourier_submenu.add_command(
             label="Apply DFT", command=self.OnApplyFFTCommand)
@@ -189,57 +218,87 @@ class MainInterface(tk.Tk):
 
 # Loading Group
         GUI.DrawGroupBox(self, name="loadingGroup", text="Load Signal",
-                         position=(0, 0), padX=5, sticky=(tk.N+tk.S+tk.E+tk.W))
+                         position=(0, 0), padX=5, sticky=tk.NSEW)
 
         loadingGroup = self.controls["loadingGroup"]
-        GUI.DrawLabel(self, name="desc",
-                      text="Select a signal file.",
-                      position=(0, 0), padY=5, owner=loadingGroup, sticky=tk.NW)
+        
+        GUI.DrawButton(self, name="newBtn", text="New Signal",
+                       position=(0, 0),
+                       owner=loadingGroup, padX=10, padY=5,
+                       sticky=(tk.NW),
+                       onClickCommand=self.OnLoadSignalButtonClicked)
+
         GUI.DrawButton(self, name="loadButton", text="Load Signal",
                        position=(0, 1),
                        owner=loadingGroup, padX=10, padY=5,
                        sticky=(tk.NE),
                        onClickCommand=self.OnLoadSignalButtonClicked)
 
-        GUI.DrawButton(self, name="loadButton", text="Clear",
-                       position=(0, 2),
+        GUI.DrawButton(self, name="saveBtn", text="Save",
+                       position=(1, 0),
+                       owner=loadingGroup, padX=10, padY=5,
+                       sticky=(tk.NW),
+                       onClickCommand=self.OnSaveSignalButtonClicked)
+
+        GUI.DrawButton(self, name="clrBtn", text="Clear",
+                       position=(1, 1),
                        owner=loadingGroup, padX=10, padY=5,
                        sticky=(tk.NE),
                        onClickCommand=self.OnClearSignals)
+###
+        GUI.DrawGroupBox(self, name='OperationsBox', text='Operations', position=(
+            1, 0), sticky=tk.NSEW, padX=5)
+        operationsBox = self.controls['OperationsBox']
+       
+       #STD Operations
+        GUI.DrawGroupBox(self, name='std', text='Standard Operations', position=(
+            0, 0), owner=operationsBox, sticky=tk.NSEW)
+        
+        stdBox = self.controls['std']
+
+        axisArray = ['(0,1)', '(1,0)', '(1,1)']
+        self.std_working_axis = tk.StringVar(self, '(0,1)')
+        
+        GUI.DrawLabel(self, name='axlbl', text='Axis:',
+                      position=(0, 0), owner=stdBox, sticky=tk.NW)
+        GUI.DrawOptions(self, self.std_working_axis, *axisArray, name='std_ax_op',
+                        position=(0, 1), owner=stdBox, sticky=tk.NE)
 
         GUI.DrawButton(self, name="addButton", text="Add Signals",
-                       position=(1, 0), owner=loadingGroup, padX=5, padY=5,
+                       position=(1, 0), owner=stdBox, padX=5, padY=5,
                        onClickCommand=self.OnAddSignalsButtonClicked, sticky=tk.NW)
         GUI.DrawButton(self, name="subBtn", text="Subtract Signals",
-                       position=(1, 1), owner=loadingGroup, padX=5, padY=5,
+                       position=(1, 1), owner=stdBox, padX=5, padY=5,
                        onClickCommand=self.OnSubtractSignalsButtonClicked, sticky=tk.NE)
         GUI.DrawButton(self, name="mulBtn", text="Multiply",
-                       position=(2, 0), owner=loadingGroup, padX=5, padY=5,
+                       position=(2, 0), owner=stdBox, padX=5, padY=5,
                        onClickCommand=self.OnMultiplySignalsButtonClicked, sticky=tk.NW)
         GUI.DrawEntry(self, name="mul", variable=self.constantMultiplier,
-                      position=(2, 1), owner=loadingGroup,
+                      position=(2, 1), owner=stdBox,
                       sticky=tk.NE, padX=5, padY=5)
+       #Quantize Operations
         GUI.DrawGroupBox(self, name="qBox", text="Quantize",
-                         position=(3, 0), columnSpan=3, owner=loadingGroup, padX=5, sticky=(tk.N+tk.S+tk.E+tk.W))
+                         position=(1, 0), owner=operationsBox, padX=5, sticky=(tk.N+tk.S+tk.E+tk.W))
 
         qbox = self.controls["qBox"]
 
-        GUI.DrawLabel(self, name="lb1", padX=5, padY=5, text="No. of levels:", position=(0, 0),
+        self.q_working_axis = tk.StringVar(self, '(0,1)')
+        GUI.DrawLabel(self, name='axlbl', text='Axis:',
+                      position=(0, 0), owner=qbox, sticky=tk.NW)
+        GUI.DrawOptions(self, self.q_working_axis, *axisArray, name='q_ax_op',
+                        position=(0, 1), owner=qbox, sticky=tk.NE)
+
+        GUI.DrawLabel(self, name="lb1", padX=5, padY=5, text="No. of levels:", position=(1, 0),
                       sticky=tk.NE, owner=qbox)
         GUI.DrawEntry(self, name="levelsEntry", padX=5, padY=5, variable=self.qLevelsVar,
-                      owner=qbox, position=(0, 1), sticky=tk.NW)
-        GUI.DrawLabel(self, name="lb2", padX=5, padY=5, text="No. of bits:", position=(1, 0),
-                      sticky=tk.NE, owner=qbox)
-        GUI.DrawEntry(self, name="bitsEntry", padX=5, padY=5, variable=self.qLevelsBits,
                       owner=qbox, position=(1, 1), sticky=tk.NW)
+        self.useBitModeVar = tk.IntVar(self, 0)
+        GUI.DrawCheckBox(self, self.useBitModeVar, name='bitmodecheck', text='Use Bit Mode(levels are #bits)',
+                         padX=5, padY=5, owner=qbox, columnSpan=2, position=(2, 0), sticky=tk.NW)
 
         GUI.DrawButton(self, name="qButton", text="Quantize Signal",
-                       position=(2, 0), columnSpan=2, padX=5, padY=5,
-                       owner=qbox, sticky=tk.NSEW, onClickCommand=self.OnQuantizeButtonClicked)
-
-        GUI.DrawButton(self, name="qButton", text="Quantize Signal(Bits)",
                        position=(3, 0), columnSpan=2, padX=5, padY=5,
-                       owner=qbox, sticky=tk.NSEW, onClickCommand=self.OnQuantizeButtonBitsClicked)
+                       owner=qbox, sticky=tk.NSEW, onClickCommand=self.OnQuantizeButtonClicked)
 
         GUI.DrawGroupBox(self, name="qvBox", padX=5, padY=5, text="Quantization Values",
                          position=(4, 0), columnSpan=2, owner=qbox, sticky=tk.NSEW)
@@ -250,22 +309,80 @@ class MainInterface(tk.Tk):
 
         GUI.DrawLabel(self, name="lblErrorValue", text="00", position=(0, 1),
                       sticky=tk.NW, owner=qvbox)
+       
+       #Fourier Transform
 
-        GUI.DrawGroupBox(self, name='fourierBox', text='Fourier Transform', position=(
-            1, 0), columnSpan=2, sticky=tk.NSEW)
+        GUI.DrawGroupBox(self, name="fourierBox", text="Fourier Transform",
+                         position=(2, 0), owner=operationsBox, padX=5, sticky=tk.NSEW)
+
         ffBox = self.controls['fourierBox']
-        GUI.DrawButton(self, name='applyFFT', text='Apply FFT', position=(
-            0, 0), owner=ffBox, onClickCommand=self.OnApplyFFTCommand, sticky=tk.NSEW)
-        GUI.DrawButton(self, name='applyIFFT', text='Apply IFFT', position=(
-            1, 0), owner=ffBox, onClickCommand=self.OnApplyFFTInverseCommand, sticky=tk.NSEW)
 
+        self.f_working_axis = tk.StringVar(self, '(0,1)')
+        tk.Grid.columnconfigure(ffBox, 0, weight = 1)
+        GUI.DrawLabel(self, name='axlbl', text='Axis:',
+                      position=(0, 0), owner=ffBox, sticky=tk.NW)
+
+        GUI.DrawOptions(self, self.f_working_axis, *axisArray, name='f_ax_op',
+                        position=(0, 1), owner=ffBox, sticky=tk.NW)
+   
+   
+        GUI.DrawGroupBox(self, name= 'stdft',columnSpan=2, padX = 5, padY = 5, text = 'Standard Fourier Transform', owner = ffBox, position=(1,0), sticky= tk.NSEW)
+
+        std_ft = self.controls['stdft'] 
+        tk.Grid.columnconfigure(std_ft, 0, weight = 1)
+
+        GUI.DrawButton(self, name='applyFFT', padX = 5, padY = 5, text='Apply Transform', position=(
+            0, 0), owner=std_ft, onClickCommand=self.OnApplyFFTCommand, sticky=tk.NSEW)
+        
+        GUI.DrawButton(self, name='applyIFFT', padX = 5, padY = 5, text='Apply Inverse Transform', position=(
+            1, 0), owner=std_ft, onClickCommand=self.OnApplyFFTInverseCommand, sticky=tk.NSEW)
+        
+        GUI.DrawGroupBox(self, name= 'fft', columnSpan=2,padX = 5, padY = 5,   text = 'Fast Fourier Transform', owner = ffBox, position=(2,0), sticky= tk.NSEW)
+        fft_box = self.controls['fft'] 
+        tk.Grid.columnconfigure(fft_box, 0, weight = 1)
+        GUI.DrawButton(self, name='applyFFT', padX = 5, padY = 5, text='Apply Fast Transform', position=(
+            0, 0), owner=fft_box, onClickCommand=self.OnApplyFFTCommand, sticky=tk.NSEW)
+        
+        GUI.DrawButton(self, name='applyIFFT', padX = 5, padY = 5, text='Apply Fast Inverse Transform', position=(
+            1, 0), owner=fft_box, onClickCommand=self.OnApplyFFTInverseCommand, sticky=tk.NSEW)
+
+        GUI.DrawGroupBox(self, name = 'manpBox', text= 'Signal Manipulation', position=(3, 0), owner= operationsBox, sticky= tk.NSEW)
+    # Signal Manipulations
+        manpBox = self.controls['manpBox']
+        
+        self.manp_working_axis = tk.StringVar(self, '(0,1)')
+        tk.Grid.columnconfigure(manpBox, 0, weight = 1)
+        GUI.DrawLabel(self, name='axlbl', text='Axis:',
+                      position=(0, 0), owner=manpBox, sticky=tk.NW)
+
+        GUI.DrawOptions(self, self.manp_working_axis, *axisArray, name='manp_ax_op',
+                        position=(0, 1), owner=manpBox, sticky=tk.NW)
+
+        GUI.DrawGroupBox(self, name= 'signal_shiftBox',columnSpan=2, padX = 5, padY = 5, text = 'Shifting', owner = manpBox, position=(1,0), sticky= tk.NSEW)
+
+        signal_shift_box = self.controls['signal_shiftBox'] 
+        tk.Grid.columnconfigure(signal_shift_box, 0, weight = 1)
+        
+        GUI.DrawLabel(self, name = 'lb', text = 'Shift Amount', position=(0,0), owner=signal_shift_box, sticky=tk.NW)
+        
+        self.shiftAmountVar = tk.IntVar(self, 0)
+        GUI.DrawEntry(self, self.shiftAmountVar, name = 'shftAmountentr', position=(0,1), owner=signal_shift_box, sticky= tk.NE)
+        
+        GUI.DrawCheckBox(self, self.boolShiftFoldedSignal, text = 'Folded Signal Shift', position=(1,0),columnSpan=2, owner=signal_shift_box, sticky=tk.NW)
+        
+        GUI.DrawButton(self, name='shiftSignalBtn', padX = 5, padY = 5, text='Shift Signal', position=(
+            2, 0),columnSpan=2, owner=signal_shift_box, onClickCommand=self.OnApplyFFTCommand, sticky=tk.NSEW)
+        
+        GUI.DrawButton(self, name='fld_btn', text = 'Fold Signal', padX= 5, padY=5, owner=manpBox, sticky= tk.NSEW, position=(2,0), columnSpan= 2)
+        
 # Preview Panel
+        tk.Grid.columnconfigure(self, 1, weight=1)
+        tk.Grid.rowconfigure(self, 1, weight=1)
         GUI.DrawGroupBox(self, name="previewGroup", text="Preview Panel",
                          position=(0, 1), rowSpan=5, padX=5,
                          sticky=(tk.N+tk.S+tk.E+tk.W))
 
         previewPanel = self.controls["previewGroup"]
-        tk.Grid.columnconfigure(self, 1, weight=1)
 
         self.previewPanel = previewPanel
         GUI.DrawLabel(self, name="Preview",
