@@ -21,7 +21,6 @@ class MainInterface(tk.Tk):
     OnMenuOpenQuantizerClicked = None
     OnQuantizeButtonClicked = None
     OnClearSignals = None
-    OnQuantizeButtonBitsClicked = None
 # FFT
     OnApplyFFTInverseCommand = None
     OnApplyFFTCommand = None
@@ -79,11 +78,9 @@ class MainInterface(tk.Tk):
     def GetQuantizationLevel(self):
         return self.qLevelsVar.get()
 
-    def GetQuantizationBitsLevel(self):
-        return 2**self.qLevelsBits.get()
-
     def GetBoolUseBitMode(self):
         return self.useBitModeVar.get()
+   
     def ChangePlotterTitle(self, plotterName, plotterTitle):
         self.signalPlotters[plotterName][0].configure(title=plotterTitle)
 
@@ -147,10 +144,8 @@ class MainInterface(tk.Tk):
         self.plottingMode = tk.StringVar(self.master)
         self.LoadedSignalName = tk.StringVar(self.master)
         self.qLevelsVar = tk.IntVar(self, 4)
-        self.qLevelsBits = tk.IntVar(self, 4)
         # Shift a folded signal or normal signal
         self.boolShiftFoldedSignal = tk.BooleanVar(self, False)
-        self.boolUseFastMethod = tk.BooleanVar(self, False)  # FFT or DFT
 
     def __setup_menubar(self):
         # create a toplevel menu

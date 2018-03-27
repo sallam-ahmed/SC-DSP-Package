@@ -119,6 +119,3 @@ def accumulate_signlas(signals_list, sign = 1):
         final_result = add_signals(final_result, second)
     
     return final_result
-
-
-        

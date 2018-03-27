@@ -12,7 +12,6 @@ from SignalGenerator.iDSignalGenerator import DSignalGenerator
 from SignalGenerator.iDSignalGeneratorBinder import DSignalGeneratorEvents
 from SignalOperations._signal import DS_Signal, Signal
 from SignalOperations._signalParser import SignalParser
-from enum import Enum
 
 
 class MainInterfaceBinder:
@@ -41,7 +40,6 @@ class MainInterfaceBinder:
         self.app.OnMultiplySignalsButtonClicked = self.MultiplySignals
         self.app.OnQuantizeButtonClicked = self.QuantizeSignal
         self.app.OnClearSignals = self.OnClearSignals
-        self.app.OnQuantizeButtonBitsClicked = self.OnQuantizeButtonBitsClicked
         self.app.OnApplyFFTCommand = lambda: self.ApplyFourier(False)
         self.app.OnApplyFFTInverseCommand = lambda: self.ApplyFourier(True)
         self.app.OnCombineSignals = self.OnCombineSignals
@@ -187,23 +185,6 @@ class MainInterfaceBinder:
 
         self.PlotOnAxis(quantized_signal, axis_dim=selected_dim,
                         signalName='Quantized Signal', signalMarker='or')
-
-    def OnQuantizeButtonBitsClicked(self):
-        if len(self.LoadedSignals) > 1:
-            raise "Cannont quantize more than one signal"
-
-        signal = self.__get_loaded_signals()
-
-        quantizationLevels = self.app.GetQuantizationLevel()
-
-        quantized_signal, signal_encoding, mse = signal_op.quantize_signal(
-            signal[0], n=quantizationLevels, use_bit_mode=True)
-
-        print("Error ", mse)
-        print("Encoding ", signal_encoding)
-
-        self.PlotSignal(quantized_signal,
-                        plotterName="resultPlotter", signalName="Q")
 
     def ApplyFourier(self, bool_is_inverse):
         if len(self.LoadedSignals) > 1:
