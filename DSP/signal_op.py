@@ -1,4 +1,5 @@
 import numpy as np
+from fft import apply_fft 
 
 def add_signals(first,second):
     """
@@ -99,15 +100,16 @@ def quantize_signal(signal, n, use_bit_mode = False):
 
 def shift_signal(signal, shift_amount, is_folded = False):
     sign = -1 if not is_folded else 1
+    new_signal = []
     for val in signal:
-        val[0] += sign * shift_amount 
-    return signal
+        new_signal.append((val[0] + (sign * shift_amount ), val[1]))
+    return new_signal
 
 def fold_signal(signal):
     #We fold around signal of (0,Y)
-    folded_signal = list(signal)
-    for val in folded_signal:
-        val[0]*=-1
+    folded_signal = []
+    for val in signal:
+        folded_signal.append((val[0]*-1, val[1]))
         #val
     return folded_signal
 
@@ -119,3 +121,21 @@ def accumulate_signlas(signals_list, sign = 1):
         final_result = add_signals(final_result, second)
     
     return final_result
+
+def remove_dc_component(signal):
+    fft_signal = apply_fft(signal, False)
+    fft_signal[0] = 0
+    no_dc_signal = apply_fft(fft_signal, True)
+
+    # _signal = [signal[k][1] for k in range(len(signal))]
+    # fft_signal = np.fft.fft(_signal)
+    # fft_signal[0] = 0a
+    # no_dc_signal = np.fft.ifft(fft_signal)
+
+    signal_values = [round(no_dc_signal[k].real, 4) for k in range(len(no_dc_signal))]
+    final_signal = [(signal[k][0], signal_values[k]) for k in range(len(no_dc_signal))] 
+
+    return final_signal
+
+def get_zero_crossings(signal):
+    pass
