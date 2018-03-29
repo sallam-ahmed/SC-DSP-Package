@@ -51,12 +51,25 @@ def _apply_fourier(values, is_inverse):
 
     return final_fourier
 
-def apply_fft(signal):
-    y_values = [x[1] for x in signal]
-    fourier_output = _recursive_fft(y_values)
+def apply_fft(signal, bool_is_inverse):
+    y_values = [x[1] if not bool_is_inverse else x for x in signal]
+
+    fourier_output = _recursive_fft(y_values, bool_is_inverse)
+
+    for i in range(len(fourier_output)):
+        inverse_len = 1 if not bool_is_inverse else len(y_values)
+        real = round(fourier_output[i].real)/inverse_len
+        imag = round(fourier_output[i].imag)
+        
+        if imag == -0.0:
+           imag = 0
+
+        cmx = complex(real, imag)
+        fourier_output[i] = cmx
+
     return fourier_output
 
-def _recursive_fft(values):
+def _recursive_fft(values, bool_is_inverse):
     N = len(values)
     if np.log2(N) % 1 > 0:
         raise "Error, not power of 2."
@@ -64,13 +77,26 @@ def _recursive_fft(values):
     if N <= 1:
         return values
 
-    even = _recursive_fft(values[0::2])
+    even = _recursive_fft(values[0::2], bool_is_inverse)
+    odd = _recursive_fft(values[1::2], bool_is_inverse)
 
-    odd = _recursive_fft(values[1::2])
-
-    omega_arr = [np.exp(-2j*np.pi*k/N)*odd[k] for k in range(N//2)]
+    sign = 2j if bool_is_inverse else -2j
+    omega_arr = [np.exp(sign*np.pi*k/N)*odd[k] for k in range(N//2)]
 
     return [even[k] + omega_arr[k] for k in range(N//2)] + [even[k] - omega_arr[k] for k in range(N//2)]
+
+def test_fft():
+    values = [(0,1), (1,2), (2,3), (3,4)]
+    np_fft = np.fft.fft([1,2,3,4])
+    my_fft = apply_fft(values, False)
+    print("NP FFT:\b{0}".format(np_fft))
+    print("My FFT:\b{0}".format(my_fft))
+
+    np_ifft = np.fft.ifft(np_fft)
+    my_ifft = apply_fft(my_fft, True)
+
+    print("NP IFFT:\b{0}".format(np_ifft))
+    print("My IFFT:\b{0}".format(my_ifft))
 
 def get_amblitudes(fourier_output, sampled_frequency):
     signal_amblitude = []
@@ -100,3 +126,6 @@ def _get_fourier_signal_xvals(sampled_frequency, fourier_length):
     x_values.insert(0, x_0)
     
     return x_values
+
+test_fft()
+
