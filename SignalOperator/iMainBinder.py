@@ -44,6 +44,8 @@ class MainInterfaceBinder:
         self.app.OnApplyFFTInverseCommand = lambda: self.ApplyFourier(True)
         self.app.OnCombineSignals = self.OnCombineSignals
         self.app.OnAccumulateSignals = self.OnAccumulateSignals
+        self.app.OnShiftSignal = self.OnShiftSignal
+        self.app.OnFoldSignal = self.OnFoldSignal
         self.app.RenderGui()
 
     def OnExit(self):
@@ -84,7 +86,7 @@ class MainInterfaceBinder:
 
                 myMarkerIndex = np.random.randint(0, len(self.signalMarkers))
                 self.PlotOnAxis(signalData.GetData(), axis_dim=(0, 0), signalName=signalLabel,
-                                signalMarker=self.signalMarkers[myMarkerIndex])
+                                signalMarker=self.signalMarkers[myMarkerIndex], _global = True)
         else:
             print("Error")
 
@@ -101,12 +103,23 @@ class MainInterfaceBinder:
             bbox_to_anchor=(1.04, 0.5), loc="center left", borderaxespad=0)
         self.app.GetPlotter(plotterName)[1].draw()
 
-    def PlotOnAxis(self, signalData=[], axis_dim=(1, 0), signalMarker='ob', signalName='label'):
+    def PlotOnAxis(self, signalData=[], axis_dim=(1, 0), signalMarker='ob', signalName='label', _global = True):
         yvals = []
         xvals = []
         for i in signalData:
             xvals.append(i[0])
             yvals.append(i[1])
+
+        if _global:
+            for i in self.app.GetPlottingPages():
+                #i is a page
+                self.app.GetAxis(axis_dim[0], axis_dim[1], page = i[0]).scatter(
+                    xvals, yvals, marker=signalMarker[0], color=signalMarker[1], label=signalName)
+                self.app.GetAxis(axis_dim[0], axis_dim[1], page = i[0]).legend(
+                    loc="upper left", borderaxespad=0, fancybox=True, framealpha=0.5)
+                self.app.repaint_axis()
+            return
+            
 
         self.app.GetAxis(axis_dim[0], axis_dim[1]).scatter(
             xvals, yvals, marker=signalMarker[0], color=signalMarker[1], label=signalName)
@@ -275,18 +288,23 @@ class MainInterfaceBinder:
             signal=self.LoadedSignals[self.SignalPath].GetData())
         print(self.fourier_output)
 
-    def OnShiftSignal(self, is_folded):
+    def OnShiftSignal(self):
         shift_val = self.app.GetShiftValue()
-        signal = self.LoadedSignals[self.SignalPath]
+        signal = self.LoadedSignals[self.SignalPath].GetData()
+        is_folded = self.app.GetIfShiftingFoldedSignal()
         shifted = signal_op.shift_signal(
             signal, shift_val, is_folded=is_folded)
 
-        self.PlotSignal(shifted)
+        selected_dim = self.app.GetManipulationOperationsAxis()
+        self.PlotOnAxis(shifted, axis_dim= selected_dim, signalName= 'Shifted Signal')
 
     def OnFoldSignal(self):
-        signal = self.LoadedSignals[self.SignalPath]
+        signal = self.LoadedSignals[self.SignalPath].GetData()
         folded = signal_op.fold_signal(signal)
-        self.PlotSignal(folded)
+        
+        selected_dim = self.app.GetManipulationOperationsAxis()
+        
+        self.PlotOnAxis(folded, axis_dim= selected_dim, signalName= 'Fodled Signal')
 
     def OnCombineSignals(self):
         raise "Not Implemented Yet"
