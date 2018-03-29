@@ -1,5 +1,5 @@
 import numpy as np
-from fft import apply_fft 
+from DSP.fft import apply_fft 
 
 def add_signals(first,second):
     """
