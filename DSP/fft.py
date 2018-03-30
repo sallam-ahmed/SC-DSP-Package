@@ -8,7 +8,8 @@ def apply_dft(signal):
 def apply_idft(fourier_output):
     return _apply_dft(fourier_output, True)
 
-def write_dft_polar_output(values):
+def write_dft_polar_output(fourier_output):
+    values = [cmath.polar(x) for x in fourier_output]
     with open('_data/outputSignal.ds', 'w') as writer:
         writer.writelines('1\n')
         writer.writelines('0\n')
@@ -24,18 +25,14 @@ def _apply_dft(fourier_input, bool_is_inverse):
     if bool_is_inverse:
         cmpx = [round(x.real) for x in fourier_output]
         print('My Inverse Output = ', cmpx)
-        return
-
-    converted = [cmath.polar(x) for x in fourier_output]
-
-    print('My Fourier Output ', converted)
-    return converted
+        return cmpx
+    return fourier_output
     
 def _apply_fourier(values, is_inverse):
     fourier_iterations = len(values)
     # x(n) * e^(-jk2PIn/N)
     final_fourier = []
-    J = complex(0, 1) if not is_inverse else complex(0, -1)
+    J = 1j if is_inverse else -1j
     for k in range(fourier_iterations):
         x_Value = 0
         for n in range(fourier_iterations):
@@ -101,6 +98,7 @@ def test_fft():
 def get_amblitudes(fourier_output, sampled_frequency):
     signal_amblitude = []
     n = len(fourier_output)
+    print(fourier_output)
     signal_amblitude = [cmath.sqrt(s.real**2 + s.imag**2)
                     for s in fourier_output]
 
