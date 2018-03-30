@@ -138,7 +138,7 @@ class MainInterface(tk.Tk):
         i=0
         for page,btn in plotters_pages:
             i+=1
-            btn.configure(text = 'Plotters {0}'.format(i))
+         #   btn.configure(text = 'Plotters {0}'.format(i))
             setattr(page, 'signalPlotters', {})
             tk.Grid.rowconfigure(page, 1, weight=1)
             tk.Grid.columnconfigure(page, 1, weight=1)
@@ -149,7 +149,6 @@ class MainInterface(tk.Tk):
         self.active_page = self.controls['plotters_pages'][-1][0]
             
     def create_new_page(self, page, btn):
-        btn.configure(text = 'Plotters {0}'.format(len(self.controls['plotters_pages'])))
         setattr(page, 'signalPlotters', {})
         tk.Grid.rowconfigure(page, 1, weight=1)
         tk.Grid.columnconfigure(page, 1, weight=1)
@@ -170,9 +169,20 @@ class MainInterface(tk.Tk):
     def repaint_axis(self):
         self.active_page.signalPlotters['plotters_axis'][1].draw()
 
-    def page_delete_callback(self, page):
-        pass
-        
+    def page_delete_callback(self, page, del_btn, pg_btn, index ):
+        result = GUI.ShowConfirmMBox("Delete Page?", "Are you sure?")
+        if result:
+            del(self.controls['plotters_pages'][index])
+            
+            if self.active_page is page:
+                next_page = self.GetPlottingPages()[index-1]
+                next_page[0].lift()
+                next_page[1].configure(foreground = 'green')
+            del_btn.destroy()
+            pg_btn.destroy()
+            page.destroy()
+
+
     def DrawResultPlotter(self, xlabel, ylabel, _title):
         GUI.DrawSignalPlot(self, name="resultPlotter",
                            signalData=[],
@@ -450,6 +460,6 @@ class MainInterface(tk.Tk):
                       text="Each Signal has a unique color!",
                       position=(0, 0), owner=previewPanel,
                       columnSpan=1, sticky=tk.NSEW)
-        GUI.CreateContainer(self, pagesCount= 2, onAddNewPageCommand = self.create_new_page, activationCallBack= self.activate_page, name = 'plotters_pages' ,position= (1,0), owner= previewPanel)
+        GUI.CreateContainer(self, pagesCount= 2, page_text_prefix='Plotters', onAddNewPageCommand = self.create_new_page, activationCallBack= self.activate_page,deletePageCallback= self.page_delete_callback, name = 'plotters_pages' ,position= (1,0), owner= previewPanel)
     # Signal Plot
         self.DrawPlotters()

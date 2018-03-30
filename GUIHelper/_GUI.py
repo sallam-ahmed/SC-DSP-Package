@@ -1,4 +1,5 @@
 import tkinter as tk
+import tkinter.messagebox as messagebox
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -38,7 +39,7 @@ class GUI:
         return rootApp
 
     @staticmethod
-    def CreateContainer(rootApp, pagesCount,onAddNewPageCommand,activationCallBack, 
+    def CreateContainer(rootApp, pagesCount,onAddNewPageCommand,activationCallBack,deletePageCallback, page_text_prefix = 'Page',
         name='container_1', position=(0, 0), padX=0, padY=0, sticky=tk.NSEW, columnSpan=1, rowSpan=1, owner = None, navBarAlginment = 'bottom'):
         """
         Create a container with pages of pagesCount
@@ -66,29 +67,41 @@ class GUI:
         container.pack(side="top", fill="both", expand=True)
         for i in range(pagesCount):
                 p = Page(master = owner, _master_container= container)
-                btn = tk.Button(buttonframe, text="Page {0}".format(i+1), command= lambda n_p=p : GUI.__activate_page(n_p, activationCallBack))
+                btn = tk.Button(buttonframe, text="{0} {1}".format(page_text_prefix, i+1), command= lambda n_p=p : GUI.__activate_page(n_p, activationCallBack, pages_list))
                 btn.pack(side="left")
-                if True:# i > 1:
-                        delbtn = tk.Button(buttonframe, text= 'x', command = lambda: delbtn.destroy())
+                if  i > 0:
+                        delbtn = tk.Button(buttonframe, text= 'x', foreground= 'red')
+                        delbtn.configure(command = lambda n_p=p, del_p = delbtn, pg_btn = btn, n_i = i : deletePageCallback(n_p, pg_btn, del_p, n_i))
                         delbtn.pack(side='left')
                 pages_list.append((p, btn))
-        btn = tk.Button(buttonframe, text = '+', command= lambda: GUI.__add_new_page(owner, container, pages_list, buttonframe, onAddNewPageCommand))
+        btn = tk.Button(buttonframe, text = '+', command= lambda: GUI.__add_new_page(owner, container, pages_list, buttonframe, onAddNewPageCommand, activationCallBack, deletePageCallback, page_text_prefix))
         btn.pack(side='right')
         rootApp.controls[name] = pages_list
+        GUI.__activate_page(pages_list[0][0], None, pages_list)
         return pages_list        
     
     @staticmethod
-    def __activate_page(page, callback):
+    def __activate_page(page, callback, pages):
         page.lift()
-        callback(page)
+        for x in pages:
+            if x[0] is page:
+                x[1].configure(foreground = 'green')
+            else:
+                x[1].configure(foreground='black')
+        if callback is not None:
+            callback(page)
     
     @staticmethod  
-    def __add_new_page(owner, container, pages_list, buttonframe, callback):
-             p = Page(master = owner, _master_container= container)
-             btn = tk.Button(buttonframe, text="Page {0}".format(len(pages_list)+1), command=p.lift)
-             btn.pack(side="left")
-             pages_list.append((p, btn))
-             callback(p, btn)
+    def __add_new_page(owner, container, pages_list, buttonframe, callback, activationCallBack, deletePageCallback, page_text_prefix):
+            p = Page(master = owner, _master_container= container)
+            btn = tk.Button(buttonframe, text="{0} {1}".format(page_text_prefix, len(pages_list)+1), command= lambda n_p=p : GUI.__activate_page(n_p, activationCallBack, pages_list))
+            btn.pack(side="left")
+            delbtn = tk.Button(buttonframe, text= 'x', foreground= 'red')
+            delbtn.configure(command = lambda n_p=p, del_p = delbtn, pg_btn = btn, n_i = len(pages_list) : deletePageCallback(n_p, pg_btn, del_p, n_i))
+            delbtn.pack(side='left')
+            pages_list.append((p, btn))
+            
+            callback(p, btn)
 
     @staticmethod
     def DrawButton(rootApp, name="Button1", text="test", position=(0, 0),
@@ -304,3 +317,7 @@ class GUI:
         newControl.pack(side=tk.LEFT, fill=tk.BOTH)
         scrollBar.config(command=newControl.yview)
         rootApp.controls[name] = newControl
+
+    @staticmethod
+    def ShowConfirmMBox(title, message):
+        return messagebox.askyesno(title= title, message= message)
