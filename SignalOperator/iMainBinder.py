@@ -40,12 +40,22 @@ class MainInterfaceBinder:
         self.app.OnMultiplySignalsButtonClicked = self.MultiplySignals
         self.app.OnQuantizeButtonClicked = self.QuantizeSignal
         self.app.OnClearSignals = self.OnClearSignals
-        self.app.OnApplyFFTCommand = lambda: self.ApplyFourier(False)
-        self.app.OnApplyFFTInverseCommand = lambda: self.ApplyFourier(True)
         self.app.OnCombineSignals = self.OnCombineSignals
         self.app.OnAccumulateSignals = self.OnAccumulateSignals
         self.app.OnShiftSignal = self.OnShiftSignal
         self.app.OnFoldSignal = self.OnFoldSignal
+
+        self.app.OnApplyStandardFourierTransformCommand = lambda: self.ApplyFourier(
+            False)
+        self.app.OnApplyStandardInverseFourierTransformCommand = lambda: self.ApplyFourier(
+            True)
+
+        self.app.OnApplyFastFourierTransformCommand = lambda: self.ApplyFastFourier(
+            False)
+
+        self.app.OnApplyInverseFastFourierTransformCommand = lambda: self.ApplyFastFourier(
+            True)
+
         self.app.RenderGui()
 
     def OnExit(self):
@@ -86,7 +96,7 @@ class MainInterfaceBinder:
 
                 myMarkerIndex = np.random.randint(0, len(self.signalMarkers))
                 self.PlotOnAxis(signalData.GetData(), axis_dim=(0, 0), signalName=signalLabel,
-                                signalMarker=self.signalMarkers[myMarkerIndex], _global = True)
+                                signalMarker=self.signalMarkers[myMarkerIndex], _global=True)
         else:
             print("Error")
 
@@ -103,7 +113,7 @@ class MainInterfaceBinder:
             bbox_to_anchor=(1.04, 0.5), loc="center left", borderaxespad=0)
         self.app.GetPlotter(plotterName)[1].draw()
 
-    def PlotOnAxis(self, signalData=[], axis_dim=(1, 0), signalMarker='ob', signalName='label', _global = True):
+    def PlotOnAxis(self, signalData=[], axis_dim=(1, 0), signalMarker='ob', signalName='label', x_label="", y_label="", axis_title="", _global=False):
         yvals = []
         xvals = []
         for i in signalData:
@@ -112,20 +122,24 @@ class MainInterfaceBinder:
 
         if _global:
             for i in self.app.GetPlottingPages():
-                #i is a page
-                self.app.GetAxis(axis_dim[0], axis_dim[1], page = i[0]).scatter(
+                # i is a page
+                self.app.GetAxis(axis_dim[0], axis_dim[1], page=i[0]).scatter(
                     xvals, yvals, marker=signalMarker[0], color=signalMarker[1], label=signalName)
-                self.app.GetAxis(axis_dim[0], axis_dim[1], page = i[0]).legend(
+                self.app.GetAxis(axis_dim[0], axis_dim[1], page=i[0]).legend(
                     loc="upper left", borderaxespad=0, fancybox=True, framealpha=0.5)
                 self.app.repaint_axis()
             return
-            
 
-        self.app.GetAxis(axis_dim[0], axis_dim[1]).scatter(
+        axis = self.app.GetAxis(axis_dim[0], axis_dim[1])
+        axis.scatter(
             xvals, yvals, marker=signalMarker[0], color=signalMarker[1], label=signalName)
-        self.app.GetAxis(axis_dim[0], axis_dim[1]).legend(
-            loc="upper left", borderaxespad=0, fancybox=True, framealpha=0.5)
-        self.app.repaint_axis()
+        axis.legend(loc="upper left", borderaxespad=0,
+                    fancybox=True, framealpha=0.5)
+        if axis_title is not None:
+            # Invokes Repaint Internally
+            self.app.ChangeAxisTitle(axis_dim[0], axis_dim[1], axis_title)
+        else:
+            self.app.repaint_axis()
 
     def SaveSignal(self):
         self.AddSignals()
@@ -154,19 +168,17 @@ class MainInterfaceBinder:
         final_result = signal_op.accumulate_signlas(signals)
 
         selected_dim = self.app.GetStdOperationsAxis()
-        self.app.ChangeAxisTitle(selected_dim[0], selected_dim[1], "AX-{0} - Signals Addition".format(selected_dim))
-        self.PlotOnAxis(final_result, axis_dim=selected_dim,
-                        signalMarker='Dr', signalName="Sum Result")
+        self.PlotOnAxis(final_result, axis_dim=selected_dim, signalMarker='Dr',
+                        signalName="Sum Result", axis_title="AX-{0} - Signals Addition".format(selected_dim))
 
     def SubtractSignals(self):
         signals = self.__get_loaded_signals()
         final_result = signal_op.accumulate_signlas(signals, sign=-1)
 
         selected_dim = self.app.GetStdOperationsAxis()
-        self.app.ChangeAxisTitle(selected_dim[0], selected_dim[1], "AX-{0} - Signals Subtraction".format(selected_dim))
 
         self.PlotOnAxis(final_result, axis_dim=selected_dim,
-                        signalMarker='or', signalName="Subtraction Result")
+                        signalMarker='or', signalName="Subtraction Result", axis_title="AX-{0} - Signals Subtraction".format(selected_dim))
 
     def MultiplySignals(self):
         signals = self.__get_loaded_signals()
@@ -177,10 +189,9 @@ class MainInterfaceBinder:
         final_result = signal_op.multiply_signal(combined_signal, cnst)
 
         selected_dim = self.app.GetStdOperationsAxis()
-        self.app.ChangeAxisTitle(selected_dim[0], selected_dim[1], "AX-{0} - Combined Signals Multiplication".format(selected_dim))
 
         self.PlotOnAxis(final_result, axis_dim=selected_dim,
-                        signalMarker='.b', signalName="Multiply Result")
+                        signalMarker='.b', signalName="Multiply Result", axis_title="AX-{0} - Combined Signals Multiplication".format(selected_dim))
 
     def QuantizeSignal(self):
         signal = self.__get_loaded_signals()
@@ -194,40 +205,17 @@ class MainInterfaceBinder:
         print("Encoding ", signal_encoding)
 
         selected_dim = self.app.GetQuantizeOperationsAxis()
-        self.app.ChangeAxisTitle(selected_dim[0], selected_dim[1], "AX-{0} - First Signal Quantization".format(selected_dim))
 
         self.PlotOnAxis(quantized_signal, axis_dim=selected_dim,
-                        signalName='Quantized Signal', signalMarker='or')
+                        signalName='Quantized Signal', signalMarker='or', axis_title="AX-{0} - First Signal Quantization".format(selected_dim))
 
     def ApplyFourier(self, bool_is_inverse):
-        if len(self.LoadedSignals) > 1:
-            return
-        signal_values = [x[1]
-                         for x in self.LoadedSignals[self.SignalPath].GetData()]
-        signal_time = [x[0]
-                       for x in self.LoadedSignals[self.SignalPath].GetData()]
-        fourier_input = signal_values if not bool_is_inverse else self.fourier_output
-        self.fourier_output = self.apply_fourier(
-            fourier_input, bool_is_inverse)
-
-        if bool_is_inverse:
-            cmpx = [round(x.real) for x in self.fourier_output]
-            print('My Inverse Output = ', cmpx)
-            return
-        converted = [cmath.polar(x) for x in self.fourier_output]
-
-        print('My Fourier Output ', converted)
-        with open('_data/outputSignal.ds', 'w') as writer:
-            writer.writelines('1\n')
-            writer.writelines('0\n')
-            writer.writelines(str(len(converted))+'\n')
-            for i in range(len(converted)):
-                writer.writelines('{0} {1} {2}'.format(
-                    i, converted[i][0], converted[i][1])+'\n')
-        self.app.DrawPlotters()
-        self.PlotAmblitude()
-        self.PlotPhaseShift()
-        self.app.ChangePlotterTitle('defaultPlotter', 'Amblitude')
+        self.fourier_output = fft.apply_dft(
+            self.LoadedSignals[self.SignalPath].GetData())
+        fs = self.app.GetFourierSamplingFreq()
+        self.PlotAmblitude(sampled_frequency=fs)
+        self.PlotPhaseShift(sampled_frequency=fs)
+        #self.app.ChangePlotterTitle('defaultPlotter', 'Amblitude')
 
     def apply_fourier(self, values, is_inverse):
         fourier_iterations = len(values)
@@ -249,44 +237,34 @@ class MainInterfaceBinder:
 
         return final_fourier
 
-    def PlotAmblitude(self, sampled_frequency=4):
-        amblitudes = []
-        n = len(self.fourier_output)
-        amblitudes = [cmath.sqrt(s.real**2 + s.imag**2)
-                      for s in self.fourier_output]
-        xValues = []
-        # 2*PI / N * (1/Fs) -? X0
-        x_0 = 2 * np.pi / (n * (1/sampled_frequency))
-        print('my xvalue = ', x_0)
-        xValues = [(x*x_0) for x in list(range(2, n+1))]
-        xValues.insert(0, x_0)
-        print(xValues)
-        self.app.DrawResultPlotter(
-            xlabel='Frequency', ylabel='Amblitude', _title='Amblitude vs Frequency')
-        self.app.GetPlotter('resultPlotter')[0].scatter(
-            xValues, amblitudes, marker='o', color='r', label='amb')
-        self.app.GetPlotter('resultPlotter')[1].draw()
+    def PlotAmblitude(self, sampled_frequency=4, title="AX-{0} - Amblitude vs Time"):
+        xValue, amblitudes = fft.get_amblitudes(
+            self.fourier_output, sampled_frequency)
+        signal = []
+        for i in range(len(xValue)):
+            signal.append((xValue[i], amblitudes[i]))
+        working_axis = self.app.GetFourierAmblitudeAxis()
+        self.PlotOnAxis(signal, working_axis, signalName='Amblitude',
+                        axis_title=title.format(working_axis))
 
-    def PlotPhaseShift(self, sampled_frequency=4):
-        phase_shifts = []
-        n = len(self.fourier_output)
-        phase_shifts = [np.degrees(cmath.atan(x.imag / x.real).real)
-                        for x in self.fourier_output]
-        xValues = []
-        # 2*PI / N * (1/Fs) -? X0
-        x_0 = 2 * np.pi / (n * (1/sampled_frequency))
-        xValues = [(x * x_0) for x in list(range(2, n+1))]
-        xValues.insert(0, x_0)
-        self.app.DrawDefaultPlotter(
-            xlabel='Frequency', ylabel='PhaseShift', _title='Phase shift vs Frequency')
-        self.app.GetPlotter('defaultPlotter')[0].scatter(
-            xValues, phase_shifts, marker='o', color='r', label='x')
-        self.app.GetPlotter('defaultPlotter')[1].draw()
+    def PlotPhaseShift(self, sampled_frequency=4, title="AX-{0} - Phase shift vs Time"):
+        xValue, phase_shifts = fft.get_phase_shift(
+            self.fourier_output, sampled_frequency)
+        signal = []
+        for i in range(len(xValue)):
+            signal.append((xValue[i], phase_shifts[i]))
+        working_axis = self.app.GetFourierPhaseShiftAxis()
+        self.PlotOnAxis(signal, working_axis, signalName='Phase vs Time',
+                        axis_title=title.format(working_axis))
 
     def ApplyFastFourier(self, bool_is_inverse):
         self.fourier_output = fft.apply_fft(
-            signal=self.LoadedSignals[self.SignalPath].GetData())
-        print(self.fourier_output)
+            signal=self.LoadedSignals[self.SignalPath].GetData(), bool_is_inverse=bool_is_inverse)
+        fs = self.app.GetFourierSamplingFreq()
+        self.PlotAmblitude(sampled_frequency=fs,
+                           title="AX-{0} - Amblitude vs Time - FFT")
+        self.PlotPhaseShift(sampled_frequency=fs,
+                            title="AX-{0} - Phase shift vs Time - FFT")
 
     def OnShiftSignal(self):
         shift_val = self.app.GetShiftValue()
@@ -296,15 +274,17 @@ class MainInterfaceBinder:
             signal, shift_val, is_folded=is_folded)
 
         selected_dim = self.app.GetManipulationOperationsAxis()
-        self.PlotOnAxis(shifted, axis_dim= selected_dim, signalName= 'Shifted Signal')
+        self.PlotOnAxis(shifted, axis_dim=selected_dim,
+                        signalName='Shifted Signal')
 
     def OnFoldSignal(self):
         signal = self.LoadedSignals[self.SignalPath].GetData()
         folded = signal_op.fold_signal(signal)
-        
+
         selected_dim = self.app.GetManipulationOperationsAxis()
-        
-        self.PlotOnAxis(folded, axis_dim= selected_dim, signalName= 'Fodled Signal')
+
+        self.PlotOnAxis(folded, axis_dim=selected_dim,
+                        signalName='Fodled Signal')
 
     def OnCombineSignals(self):
         raise "Not Implemented Yet"

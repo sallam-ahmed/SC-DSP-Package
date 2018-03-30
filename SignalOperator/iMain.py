@@ -22,10 +22,10 @@ class MainInterface(tk.Tk):
     OnQuantizeButtonClicked = None
     OnClearSignals = None
 # FFT
-    OnApplyFFTInverseCommand = None
-    OnApplyFFTCommand = None
-    OnApplyFastFourierCommand = None
-    OnApplyIFFTComman = None
+    OnApplyStandardInverseFourierTransformCommand = None
+    OnApplyStandardFourierTransformCommand = None
+    OnApplyFastFourierTransformCommand = None
+    OnApplyInverseFastFourierTransformCommand = None
 # Signal Shifting/Folding
     OnShiftSignal = None
     OnFoldSignal = None
@@ -126,6 +126,9 @@ class MainInterface(tk.Tk):
     
     def GetPlottingPages(self):
         return self.controls['plotters_pages']
+
+    def GetFourierSamplingFreq(self):
+        return self.fourier_sampling_frequence.get()
 #############################################################################       PLOTTERS
     def ChangePlotterTitle(self, plotterName, plotterTitle):
         self.signalPlotters[plotterName][0].configure(title=plotterTitle)
@@ -157,6 +160,7 @@ class MainInterface(tk.Tk):
     def activate_page(self, page):
         self.active_page = page
         print(page)
+        self.repaint_axis()
 
     def ChangeAxisTitle(self, i, j, _title):
         axis_array = self.active_page.signalPlotters['plotters_axis'][0]
@@ -166,7 +170,9 @@ class MainInterface(tk.Tk):
     def repaint_axis(self):
         self.active_page.signalPlotters['plotters_axis'][1].draw()
 
-
+    def page_delete_callback(self, page):
+        pass
+        
     def DrawResultPlotter(self, xlabel, ylabel, _title):
         GUI.DrawSignalPlot(self, name="resultPlotter",
                            signalData=[],
@@ -233,13 +239,13 @@ class MainInterface(tk.Tk):
         operations_menu.add_cascade(label="Quantize", menu=quantize_submenu)
         fourier_submenu = tk.Menu(operations_menu, tearoff=0)
         fourier_submenu.add_command(
-            label="Apply DFT", command=self.OnApplyFFTCommand)
+            label="Apply DFT", command=self.OnApplyStandardFourierTransformCommand)
         fourier_submenu.add_command(
-            label="Apply Inverse DFT", command=self.OnApplyFFTInverseCommand)
+            label="Apply Inverse DFT", command=self.OnApplyStandardInverseFourierTransformCommand)
         fourier_submenu.add_command(
-            label="Apply FFT", command=self.OnApplyFastFourierCommand)
+            label="Apply FFT", command=self.OnApplyFastFourierTransformCommand)
         fourier_submenu.add_command(
-            label="Apply Inverse FFT", command=self.OnApplyIFFTComman)
+            label="Apply Inverse FFT", command=self.OnApplyInverseFastFourierTransformCommand)
         operations_menu.add_cascade(
             label="Fourier Transform", menu=fourier_submenu)
         menubar.add_cascade(label="Operations", menu=operations_menu)
@@ -254,7 +260,7 @@ class MainInterface(tk.Tk):
     def __drawGui(self):
         self.__setup_menubar()
 
-# Loading Group
+    # Loading Group
         GUI.DrawGroupBox(self, name="loadingGroup", text="Load Signal",
                          position=(0, 0), padX=5, sticky=tk.NSEW)
 
@@ -283,7 +289,7 @@ class MainInterface(tk.Tk):
                        owner=loadingGroup, padX=10, padY=5,
                        sticky=(tk.NE),
                        onClickCommand=self.OnClearSignals)
-###
+
         GUI.DrawGroupBox(self, name='OperationsBox', text='Operations', position=(
             1, 0), sticky=tk.NSEW, padX=5)
         operationsBox = self.controls['OperationsBox']
@@ -361,40 +367,44 @@ class MainInterface(tk.Tk):
                       position=(0, 0), owner=ffBox, sticky=tk.NW)
 
         GUI.DrawOptions(self, self.fourier_amblitude_waxis, *axisArray, name='f_ax_op',
-                        position=(0, 1), owner=ffBox, sticky=tk.NW)
+                        position=(0, 1), owner=ffBox, sticky=tk.NE)
         ##
         self.fourier_phase_shift_waxis = tk.StringVar(self, '(1,0)')
         GUI.DrawLabel(self, name='axlbl', text='Phase Shift Axis:',
                       position=(1, 0), owner=ffBox, sticky=tk.NW)
 
         GUI.DrawOptions(self, self.fourier_phase_shift_waxis, *axisArray, name='f_p_ax_op',
-                        position=(1, 1), owner=ffBox, sticky=tk.NW)
+                        position=(1, 1), owner=ffBox, sticky=tk.NE)
+
+        self.fourier_sampling_frequence = tk.IntVar(self, 1000)
+        GUI.DrawLabel(self, name = 'ftfs', text='Sampling Frequency:', position=(2,0), owner = ffBox, sticky= tk.NW)
+        GUI.DrawEntry(self, self.fourier_sampling_frequence, name= 'ftfs_entry', position=(2,1), owner = ffBox, sticky= tk.NE)
 
         GUI.DrawGroupBox(self, name='stdft', columnSpan=2, padX=5, padY=5,
-                         text='Standard Fourier Transform', owner=ffBox, position=(2, 0), sticky=tk.NSEW)
+                         text='Standard Fourier Transform', owner=ffBox, position=(3, 0), sticky=tk.NSEW)
 
         std_ft = self.controls['stdft']
         tk.Grid.columnconfigure(std_ft, 0, weight=1)
 
         GUI.DrawButton(self, name='applyFFT', padX=5, padY=5, text='Apply Transform', position=(
-            0, 0), owner=std_ft, onClickCommand=self.OnApplyFFTCommand, sticky=tk.NSEW)
+            0, 0), owner=std_ft, onClickCommand=self.OnApplyStandardFourierTransformCommand, sticky=tk.NSEW)
 
         GUI.DrawButton(self, name='applyIFFT', padX=5, padY=5, text='Apply Inverse Transform', position=(
-            1, 0), owner=std_ft, onClickCommand=self.OnApplyFFTInverseCommand, sticky=tk.NSEW)
+            1, 0), owner=std_ft, onClickCommand=self.OnApplyStandardInverseFourierTransformCommand, sticky=tk.NSEW)
 
         GUI.DrawGroupBox(self, name='fft', columnSpan=2, padX=5, padY=5,
-                         text='Fast Fourier Transform', owner=ffBox, position=(3, 0), sticky=tk.NSEW)
+                         text='Fast Fourier Transform', owner=ffBox, position=(4, 0), sticky=tk.NSEW)
         fft_box = self.controls['fft']
         tk.Grid.columnconfigure(fft_box, 0, weight=1)
         GUI.DrawButton(self, name='applyFFT', padX=5, padY=5, text='Apply Fast Transform', position=(
-            0, 0), owner=fft_box, onClickCommand=self.OnApplyFFTCommand, sticky=tk.NSEW)
+            0, 0), owner=fft_box, onClickCommand=self.OnApplyFastFourierTransformCommand, sticky=tk.NSEW)
 
         GUI.DrawButton(self, name='applyIFFT', padX=5, padY=5, text='Apply Fast Inverse Transform', position=(
-            1, 0), owner=fft_box, onClickCommand=self.OnApplyFFTInverseCommand, sticky=tk.NSEW)
+            1, 0), owner=fft_box, onClickCommand=self.OnApplyInverseFastFourierTransformCommand, sticky=tk.NSEW)
 
         GUI.DrawGroupBox(self, name='manpBox', text='Signal Manipulation', position=(
             3, 0), owner=operationsBox, sticky=tk.NSEW)
-    # Signal Manipulations
+       # Signal Manipulations
         manpBox = self.controls['manpBox']
 
         self.manp_working_axis = tk.StringVar(self, '(0,1)')
@@ -426,8 +436,7 @@ class MainInterface(tk.Tk):
 
         GUI.DrawButton(self, name='fld_btn', text='Fold Signal', padX=5, padY=5,
                        owner=manpBox, sticky=tk.NSEW, position=(2, 0), columnSpan=2, onClickCommand= self.OnFoldSignal)
-
-# Preview Panel
+    # Preview Panel
         tk.Grid.columnconfigure(self, 1, weight=1)
         tk.Grid.rowconfigure(self, 1, weight=1)
         GUI.DrawGroupBox(self, name="previewGroup", text="Preview Panel",
@@ -442,5 +451,5 @@ class MainInterface(tk.Tk):
                       position=(0, 0), owner=previewPanel,
                       columnSpan=1, sticky=tk.NSEW)
         GUI.CreateContainer(self, pagesCount= 2, onAddNewPageCommand = self.create_new_page, activationCallBack= self.activate_page, name = 'plotters_pages' ,position= (1,0), owner= previewPanel)
-# Signal Plot
+    # Signal Plot
         self.DrawPlotters()
