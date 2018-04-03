@@ -139,3 +139,125 @@ def remove_dc_component(signal):
 
 def get_zero_crossings(signal):
     pass
+
+def convolve_signal(signal, kernel):
+    signal1_x = [x[0] for x in signal]
+    signal1_y = [x[1] for x in signal]
+
+    kernel_x = [x[0] for x in kernel]
+    kernel_y = [x[1] for x in kernel]
+
+    signal_minX = int(min(signal1_x))
+    signal_maxX = int(max(signal1_x))
+    
+    kernel_minX = int(min(kernel_x))
+    kernel_maxX = int(max(kernel_x))
+
+    current_comp_num = signal_minX
+
+    result = []
+    while True:
+
+        value = 0
+        has_valid_term = False
+
+        for i in range(signal_minX, current_comp_num +1):
+            xk_ix = i
+            hk_ix = current_comp_num - xk_ix
+
+            if signal_maxX >= xk_ix >= signal_minX and  kernel_maxX >= hk_ix >= kernel_minX:
+                has_valid_term = True
+                value += (signal1_y[xk_ix] * kernel_y[hk_ix])
+        
+        if has_valid_term:
+            result.append((current_comp_num, value))
+        else:
+            break
+        current_comp_num+=1
+    return result
+
+def test_convolve():
+    pass
+
+def corelate_signal(signal, kernel, is_periodic = False):
+    return __correlate_signal(signal, kernel, periodic= is_periodic)
+
+def norm_correlate_signal(signal, kernel, is_periodic = False):
+    return __correlate_signal(signal, kernel, periodic= is_periodic, normalized= True)
+
+def __correlate_signal(signal, kernel, periodic = False, normalized = False):
+    first_sample_number = signal[0][0] #S[0].X
+    
+    signal1_length = len(signal)
+    kernel_length = len(kernel)
+
+    signal1values = [x[1] for x in signal]
+    kernelvalues  = [x[1] for x in kernel]
+    num_of_samples = len(signal1values)
+    
+    if signal1_length != kernel_length:
+        num_of_samples = signal1_length + kernel_length - 1
+        signal1_augmentingzeros = num_of_samples - signal1_length
+        kernel_augmentingzeros = num_of_samples - kernel_length
+
+        # add augmenting zeros
+        for i in range(0, signal1_augmentingzeros):
+            signal1values.append(0)
+
+        for i in range(0, kernel_augmentingzeros):
+            kernelvalues.append(0)
+        # print(signal1values)
+        # print(kernelvalues)
+
+    kernel_leftrotations = []
+    
+    if periodic:
+        print("periodic")
+        #Kernel Rotation
+        for i in range(0, num_of_samples):
+            first_element = kernelvalues[0]
+            del(kernelvalues[0])
+            kernelvalues.append(first_element)
+            new_list = kernelvalues[:]
+            kernel_leftrotations.append(new_list)
+        last_rotation = kernel_leftrotations[-1]
+        del(kernel_leftrotations[-1])
+        
+        kernel_leftrotations = [last_rotation] + kernel_leftrotations
+
+    else:
+        print("non periodic")
+        signal1values2_tmp = list(kernelvalues)
+        kernel_leftrotations = [signal1values2_tmp] + kernel_leftrotations
+        # get rotations of kernel
+        for i in range(0, num_of_samples):
+            del kernelvalues[0]
+            kernelvalues.append(0)
+            new_list = kernelvalues[:]
+            kernel_leftrotations.append(new_list)
+
+        del kernel_leftrotations[-1]
+
+    # cross correlate the kernel rotations with kernel
+    resulted_signal = []
+
+    current_sample_number = first_sample_number
+    
+    for i in range(0, num_of_samples):
+        sample_sum = 0
+        for y in range(0, num_of_samples):
+            sample_sum += (signal1values[y] * kernel_leftrotations[i][y])
+
+        resulted_signal.append((current_sample_number, (sample_sum / num_of_samples)))
+        current_sample_number += 1
+    
+    if normalized:
+        print("Exec Normalized")
+        signal1_sum = np.sum(np.square(signal1values))
+        kernel_sum = np.sum(np.square(kernelvalues))
+        normalization_factor = np.sqrt(signal1_sum * kernel_sum) / num_of_samples
+
+        resulted_signal = [(x[0], x[1] / normalization_factor) for x in resulted_signal]
+
+    return resulted_signal
+

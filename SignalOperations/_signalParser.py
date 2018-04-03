@@ -1,3 +1,8 @@
+import numpy as np
+
+def P2R(amb, phs):
+    return complex(round(amb * np.cos(phs)), round(amb* np.sin(phs)))
+
 class SignalParser:        
         @staticmethod
         def GenerateSignalFile(signalPath = "_data/_signals/", name = "test_signal",
@@ -97,26 +102,34 @@ class SignalParser:
                 isPeriodic= False
                 signalData = []
                 signalFrequency = []
+                signal_fourier_input = []
                 with open(signalPath,'r') as file:
                         fileData = file.readlines()
                         signalType = int(fileData[0])
                         isPeriodic = bool(int(fileData[1]))
                         noOfEntries = int(fileData[2])
-                        for i in range(noOfEntries):
-                                point = fileData[i+3].split(' ')
-                                signalData.append( (float(point[0].strip()), float(point[1].strip())) )
-#                        print("Signal Data \n " , signalData)
-#                        return
-                        if signalType == 2:
+                        if signalType == 0: #Normal Signal
+                                for i in range(noOfEntries):
+                                        point = fileData[i+3].split(' ')
+                                        signalData.append( (float(point[0].strip()), float(point[1].strip())) )
+        #                        print("Signal Data \n " , signalData)
+        #                        return
+                        elif signalType == 1:
+                                for i in range(noOfEntries):
+                                        #Read Pairs of Polar and convert into complex for further Fourier Input
+                                        sample = fileData[i+3].split(' ')
+                                        amb = float(sample[0])
+                                        phase_shift = float(sample[1])
+                                        complex_form = P2R(amb, phase_shift)
+                                        signal_fourier_input.append(complex_form)
+                        elif signalType == 2:
                                 secondEntryNo = int(fileData[noOfEntries])
                                 for i in range(secondEntryNo):
                                         point = fileData[i+1+noOfEntries].split(' ')
                                         signalFrequency.append( (float(point[0].strip()), float(point[1].strip())) )
+                        
                 
-                return (signalType, isPeriodic, signalData, signalFrequency)
-                
-                
-                
+                return (signalType, isPeriodic, signalData, signalFrequency, signal_fourier_input)
                 
                 
                 
@@ -139,3 +152,5 @@ class SignalParser:
                 
                 
                 
+                
+        

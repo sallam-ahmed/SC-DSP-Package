@@ -29,6 +29,11 @@ class MainInterface(tk.Tk):
 # Signal Shifting/Folding
     OnShiftSignal = None
     OnFoldSignal = None
+# Correlation / Convolution
+    OnCorrelateSignal = None
+    OnConvluteSignal = None
+    OnNormalizedCorrelation = None
+
 ################################### Vars ######################################
 ###############################################################################
     controls = {}
@@ -119,6 +124,12 @@ class MainInterface(tk.Tk):
         y = int(ax_str[3])
         return (x, y)
 
+    def GetConvlutionWorkingAxis(self):
+        ax_str = self.conv_working_axis.get()
+        x = int(ax_str[1])
+        y = int(ax_str[3])
+        return (x, y)
+
     def GetAxis(self, i, j, page = None):
         if page is None:
             page = self.active_page
@@ -146,7 +157,7 @@ class MainInterface(tk.Tk):
                 1, 0), columnSpan=2,  sticky=tk.NSEW)
             page.signalPlotters['plotters_axis'][0][0,0].set(title = 'Plotter {0} Workspace'.format(i))
             page.signalPlotters['plotters_axis'][1].draw()
-        self.active_page = self.controls['plotters_pages'][-1][0]
+        self.active_page = self.controls['plotters_pages'][0][0]
             
     def create_new_page(self, page, btn):
         setattr(page, 'signalPlotters', {})
@@ -411,10 +422,10 @@ class MainInterface(tk.Tk):
 
         GUI.DrawButton(self, name='applyIFFT', padX=5, padY=5, text='Apply Fast Inverse Transform', position=(
             1, 0), owner=fft_box, onClickCommand=self.OnApplyInverseFastFourierTransformCommand, sticky=tk.NSEW)
+       # Signal Manipulations
 
         GUI.DrawGroupBox(self, name='manpBox', text='Signal Manipulation', position=(
             3, 0), owner=operationsBox, sticky=tk.NSEW)
-       # Signal Manipulations
         manpBox = self.controls['manpBox']
 
         self.manp_working_axis = tk.StringVar(self, '(0,1)')
@@ -446,6 +457,30 @@ class MainInterface(tk.Tk):
 
         GUI.DrawButton(self, name='fld_btn', text='Fold Signal', padX=5, padY=5,
                        owner=manpBox, sticky=tk.NSEW, position=(2, 0), columnSpan=2, onClickCommand= self.OnFoldSignal)
+
+        #Convolution
+        GUI.DrawGroupBox(self, name='convBox', text='Convlution / Correlation', position=(
+            4, 0), owner=operationsBox, sticky=tk.NSEW)
+        convBox = self.controls['convBox']
+        
+        self.conv_working_axis = tk.StringVar(self, '(0,1)')
+        
+        tk.Grid.columnconfigure(convBox, 0, weight=1)
+        
+        GUI.DrawLabel(self, name='axlbl', text='Axis:',
+                      position=(0, 0), owner=convBox, sticky=tk.NW)
+
+        GUI.DrawOptions(self, self.conv_working_axis, *axisArray, name='conv_ax_op',
+                        position=(0, 1), owner=convBox, sticky=tk.NW)
+
+        GUI.DrawButton(self, name='convoluteSignal', padX=5, padY=0, text='Convolute Signal', position=(
+            1, 0), columnSpan=2, owner=convBox, onClickCommand=self.OnConvluteSignal, sticky=tk.NSEW)
+        
+        GUI.DrawButton(self, name='corSignal', padX=5, padY=0, text='Correlate Signal', position=(
+            2, 0), columnSpan=2, owner=convBox, onClickCommand=self.OnCorrelateSignal, sticky=tk.NSEW)
+        GUI.DrawButton(self, name='corNormSignal', padX=5, padY=0, text='Correlate Signal(Normalized)', position=(
+            3, 0), columnSpan=2, owner=convBox, onClickCommand=self.OnNormalizedCorrelation, sticky=tk.NSEW)
+        
     # Preview Panel
         tk.Grid.columnconfigure(self, 1, weight=1)
         tk.Grid.rowconfigure(self, 1, weight=1)

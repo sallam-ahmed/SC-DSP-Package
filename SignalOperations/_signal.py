@@ -38,11 +38,12 @@ class DS_Signal:
         signalData = []
         signalFrequency = []
 
-        def __init__(self, stype, isPeriodic, sData, sFrequency):
+        def __init__(self, stype, isPeriodic, sData, sFrequency, sFourierInput):
                 self.signalData = sData
                 self.isPeriodic = isPeriodic
                 self.signalFrequency = sFrequency
                 self.signalType = stype
+                self.fourier_values = sFourierInput
                 
         @staticmethod
         def LoadSignal(signalpath = '_data/_signals/test_new_signal.sgn'):
@@ -50,7 +51,7 @@ class DS_Signal:
                 return DS_Signal(stype = signalData[0],
                                  isPeriodic= signalData[1],
                                 sData = signalData[2],
-                                sFrequency = signalData[3])
+                                sFrequency = signalData[3], sFourierInput = signalData[4])
         def GetData(self):
                 return self.signalData
         def GetFrequency(self):

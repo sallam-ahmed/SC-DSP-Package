@@ -52,9 +52,12 @@ class MainInterfaceBinder:
 
         self.app.OnApplyFastFourierTransformCommand = lambda: self.ApplyFastFourier(
             False)
-
         self.app.OnApplyInverseFastFourierTransformCommand = lambda: self.ApplyFastFourier(
             True)
+
+        self.app.OnConvluteSignal = self.OnConvluteSignal
+        self.app.OnCorrelateSignal = lambda: self.OnCorrelateSignal(is_normalized = False)
+        self.app.OnNormalizedCorrelation = lambda: self.OnCorrelateSignal(is_normalized = True)
 
         self.app.RenderGui()
 
@@ -92,6 +95,10 @@ class MainInterfaceBinder:
                 self.Mode = 'DS'
                 signalData = DS_Signal.LoadSignal(signalpath=self.SignalPath)
                 self.LoadedSignals[self.SignalPath] = signalData
+                if signalData.signalType == 1:
+                    # Fourier Signal
+                    self.fourier_output = signalData.fourier_values
+                    return
                 signalLabel = self.SignalPath.split('/')[-1].split('.')[0]
 
                 myMarkerIndex = np.random.randint(0, len(self.signalMarkers))
@@ -136,7 +143,7 @@ class MainInterfaceBinder:
         axis.legend(loc="upper left", borderaxespad=0,
                     fancybox=True, framealpha=0.5)
         if axis_title is not None:
-            # Invokes Repaint Internally
+              # Invokes Repaint Internally
             self.app.ChangeAxisTitle(axis_dim[0], axis_dim[1], axis_title)
         else:
             self.app.repaint_axis()
@@ -164,7 +171,7 @@ class MainInterfaceBinder:
         lbox.insert(tk.END, signal)
 
     def AddSignals(self):
-        signals = self.__get_loaded_signals()
+        signals = self.__get_loaded_signals_data()
         final_result = signal_op.accumulate_signlas(signals)
 
         selected_dim = self.app.GetStdOperationsAxis()
@@ -172,7 +179,7 @@ class MainInterfaceBinder:
                         signalName="Sum Result", axis_title="AX-{0} - Signals Addition".format(selected_dim))
 
     def SubtractSignals(self):
-        signals = self.__get_loaded_signals()
+        signals = self.__get_loaded_signals_data()
         final_result = signal_op.accumulate_signlas(signals, sign=-1)
 
         selected_dim = self.app.GetStdOperationsAxis()
@@ -181,7 +188,7 @@ class MainInterfaceBinder:
                         signalMarker='or', signalName="Subtraction Result", axis_title="AX-{0} - Signals Subtraction".format(selected_dim))
 
     def MultiplySignals(self):
-        signals = self.__get_loaded_signals()
+        signals = self.__get_loaded_signals_data()
         cnst = self.app.constantMultiplier.get()
 
         combined_signal = signal_op.combine(signals)
@@ -194,7 +201,7 @@ class MainInterfaceBinder:
                         signalMarker='.b', signalName="Multiply Result", axis_title="AX-{0} - Combined Signals Multiplication".format(selected_dim))
 
     def QuantizeSignal(self):
-        signal = self.__get_loaded_signals()
+        signal = self.__get_loaded_signals_data()
 
         quantizationLevels = self.app.GetQuantizationLevel()
 
@@ -210,12 +217,16 @@ class MainInterfaceBinder:
                         signalName='Quantized Signal', signalMarker='or', axis_title="AX-{0} - First Signal Quantization".format(selected_dim))
 
     def ApplyFourier(self, bool_is_inverse):
+        if bool_is_inverse:
+            signal_values = fft.apply_idft(self.fourier_output)
+            print(signal_values)
+            return
         self.fourier_output = fft.apply_dft(
             self.LoadedSignals[self.SignalPath].GetData())
         fs = self.app.GetFourierSamplingFreq()
         self.PlotAmblitude(sampled_frequency=fs)
         self.PlotPhaseShift(sampled_frequency=fs)
-        #self.app.ChangePlotterTitle('defaultPlotter', 'Amblitude')
+        # self.app.ChangePlotterTitle('defaultPlotter', 'Amblitude')
 
     def apply_fourier(self, values, is_inverse):
         fourier_iterations = len(values)
@@ -258,6 +269,12 @@ class MainInterfaceBinder:
                         axis_title=title.format(working_axis))
 
     def ApplyFastFourier(self, bool_is_inverse):
+        if bool_is_inverse:
+            signal_values = fft.apply_fft(
+                self.fourier_output, bool_is_inverse=bool_is_inverse)
+            print(signal_values)
+            return
+
         self.fourier_output = fft.apply_fft(
             signal=self.LoadedSignals[self.SignalPath].GetData(), bool_is_inverse=bool_is_inverse)
         fs = self.app.GetFourierSamplingFreq()
@@ -292,9 +309,50 @@ class MainInterfaceBinder:
     def OnAccumulateSignals(self):
         raise "Not implemented yet"
 
-    def __get_loaded_signals(self):
+    def OnConvluteSignal(self):
+        loaded_signals = self.__get_loaded_signals()
+        first = loaded_signals[0]
+        second = loaded_signals[1]
+        print('Using first two signals only')
+        result_signal = signal_op.convolve_signal(
+            first.GetData(), second.GetData())
+
+        w_axis = self.app.GetConvlutionWorkingAxis()
+
+        self.PlotOnAxis(result_signal, axis_dim=w_axis, signalMarker='ob',
+                        signalName='Convolution Result', axis_title="AX-{0} - Signals Convolution".format(w_axis))
+
+    def OnCorrelateSignal(self, is_normalized):
+        loaded_signals = self.__get_loaded_signals()
+        first = loaded_signals[0]
+        second = []
+        periodic = True
+        if len(loaded_signals) == 1: # Auto Correlation
+            second = loaded_signals[0]
+        else:
+            second = loaded_signals[1]
+            periodic = first.isPeriodic
+
+        print('Using first two signals only')
+        correlation_func = signal_op.corelate_signal if not is_normalized else signal_op.norm_correlate_signal
+        result_signal = correlation_func(
+            first.GetData(), second.GetData(), is_periodic=periodic)
+
+        w_axis = self.app.GetConvlutionWorkingAxis()
+
+        self.PlotOnAxis(result_signal, axis_dim=w_axis, signalMarker='ob',
+                        signalName='Convolution Result', axis_title="AX-{0} - Signals{1}Correlation".format(w_axis, '' if not is_normalized else 'Normalized'))
+
+    def __get_loaded_signals_data(self):
         signals = []
         if self.Mode == 'DS':
             for i in self.LoadedSignals:
                 signals.append(self.LoadedSignals[i].GetData())
+        return signals
+
+    def __get_loaded_signals(self):
+        signals = []
+        if self.Mode == 'DS':
+            for i in self.LoadedSignals:
+                signals.append(self.LoadedSignals[i])
         return signals

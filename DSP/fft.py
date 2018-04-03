@@ -63,13 +63,15 @@ def apply_fft(signal, bool_is_inverse):
 
         cmx = complex(real, imag)
         fourier_output[i] = cmx
-
-    return fourier_output
+    final_output = list(fourier_output)
+    if bool_is_inverse:
+        final_output = [round(fourier_output[k].real) for k in range(len(fourier_output))]
+    return final_output
 
 def _recursive_fft(values, bool_is_inverse):
     N = len(values)
-    if np.log2(N) % 1 > 0:
-        raise "Error, not power of 2."
+    # if np.log2(N) % 1 > 0:
+    #     raise "Error, not power of 2."
 
     if N <= 1:
         return values
