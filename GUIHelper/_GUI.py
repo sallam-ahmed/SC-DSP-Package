@@ -240,8 +240,6 @@ class GUI:
 
         if owner == None:
             owner = rootApp
-        colors = [i + j for j in 'o<.' for i in 'bgrcmyk']
-        print(colors)
         fig, ax = plt.subplots()
 
         plt.tight_layout(rect=[.01, .2, .72, 1])

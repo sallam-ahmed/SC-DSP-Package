@@ -7,7 +7,7 @@ import tkinter as tk
 from GUIHelper._GUI import GUI
 
 import DSP.filters as fls
-from SignalOperations._signal import DS_Signal, Signal
+from DSP.digital_signal import DS_Signal
 import numpy as np
 
 from DSP.signal_op import convolve_signal, shift_signal

@@ -126,6 +126,3 @@ def _get_fourier_signal_xvals(sampled_frequency, fourier_length):
     x_values.insert(0, x_0)
     
     return x_values
-
-test_fft()
-

@@ -10,8 +10,7 @@ from DSP import fft, signal_op
 from GUIHelper._GUI import GUI
 from SignalGenerator.iDSignalGenerator import DSignalGenerator
 from SignalGenerator.iDSignalGeneratorBinder import DSignalGeneratorEvents
-from SignalOperations._signal import DS_Signal, Signal
-from SignalOperations._signalParser import SignalParser
+from DSP.digital_signal import DS_Signal, ReadDSFileFormat
 
 
 class MainInterfaceBinder:
@@ -84,33 +83,23 @@ class MainInterfaceBinder:
 
     def LoadSignal(self):
         fname = tk.filedialog.askopenfilename(
-            filetypes=[("Signal files", "*.sgn;*.ds")])
+            filetypes=[("Signal files", "*.ds")])
         if fname:
             if fname in self.LoadedSignals:
                 return
             self.SignalPath = fname
+            self.Mode = 'DS'
+            signalData = DS_Signal.LoadSignal(signalpath=self.SignalPath)
+            self.LoadedSignals[self.SignalPath] = signalData
+            if signalData.signalType == 1:
+                # Fourier Signal
+                self.fourier_output = signalData.fourier_values
+                return
+            signalLabel = self.SignalPath.split('/')[-1].split('.')[0]
 
-            signalFileType = fname.split('.')[1]
-            if signalFileType == 'sgn':
-                self.Mode = 'SGN'
-                signalData = Signal.LoadSignal(signalpath=self.SignalPath)
-                self.UpdateSignalUiData(signalData)
-                self.LoadedSignals[self.SignalPath] = signalData
-                signalLabel = signalData.signalName
-                self.AddChannelsToList(signalData)
-            else:
-                self.Mode = 'DS'
-                signalData = DS_Signal.LoadSignal(signalpath=self.SignalPath)
-                self.LoadedSignals[self.SignalPath] = signalData
-                if signalData.signalType == 1:
-                    # Fourier Signal
-                    self.fourier_output = signalData.fourier_values
-                    return
-                signalLabel = self.SignalPath.split('/')[-1].split('.')[0]
-
-                myMarkerIndex = np.random.randint(0, len(self.signalMarkers))
-                self.PlotOnAxis(signalData.GetData(), axis_dim=(0, 0), signalName=signalLabel,
-                                signalMarker=self.signalMarkers[myMarkerIndex], _global=True)
+            myMarkerIndex = np.random.randint(0, len(self.signalMarkers))
+            self.PlotOnAxis(signalData.GetData(), axis_dim=(0, 0), signalName=signalLabel,
+                            signalMarker=self.signalMarkers[myMarkerIndex], _global=True)
         else:
             print("Error")
 

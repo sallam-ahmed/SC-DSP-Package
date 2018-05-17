@@ -1,6 +1,7 @@
 import numpy as np
-from SignalOperations._signalParser import SignalParser
+from DSP.digital_signal import ReadDSFileFormat, GenerateSignal
 import tkinter as tk
+
 
 class DSignalGeneratorEvents:
 
@@ -23,14 +24,10 @@ class DSignalGeneratorEvents:
         signalFs = self.app.GetSignalFs()
         self.finalSignal = []
 
-        if signalType == 'Cos':  # We will use sin as  a base, shifted by 90 if cos is required
-            phaseShift += 90
+        self.finalSignal = GenerateSignal(
+            nSamples, signalAmblitude, signalFrequency, signalFs, phaseShift, stype=str(signalType).lower())
 
-        for i in range(nSamples):
-            sValue = signalAmblitude * \
-                np.sin(2 * np.pi * signalFrequency/signalFs * i + phaseShift)
-            self.finalSignal.append((i, sValue))
-
+        
         self.PlotSignal(self.finalSignal)
 
     def PlotSignal(self, signalData):
@@ -46,17 +43,3 @@ class DSignalGeneratorEvents:
 
     def SaveSignal(self):
         pass
-        # typevar = tk.StringVar()
-        # typevar.set("saasasd")
-        # filetypes =[("Signal files", "*.sgn")]
-        # fname = tk.filedialog.asksaveasfilename(filetypes = filetypes,typevariable = typevar)
-        # if fname:
-        #         selectedTypeExtension = [ y for y in filetypes if (y[0] == typevar.get())][0]
-        #         pureExtension = selectedTypeExtension[1].split('.')[1]
-        #         fname += '.'+pureExtension
-        #         extensionName = fname + '.'+pureExtension
-        #         SignalParser.(extensionName,name = fname,
-        #                                         channels= generatedChannels,
-        #                                         markers = generatedMarkers)
-        # else:
-        #         print("Error")
