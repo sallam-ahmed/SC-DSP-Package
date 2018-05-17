@@ -133,7 +133,10 @@ def remove_dc_component(signal):
     return final_signal
 
 def get_zero_crossings(signal):
-    pass
+    signed_data= np.sign(signal)  
+    signed_data[signed_data==0] = -1 
+    zc = np.where(np.diff(signed_data))[0]  
+    return len(zc)
 
 def convolve_signal(signal, kernel):
     signal1_x = [x[0] for x in signal]
