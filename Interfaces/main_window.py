@@ -6,7 +6,7 @@ from GUIHelper._GUI import GUI
 
 class MainInterface(tk.Tk):
     ################################## Events #####################################
-# Navigation
+    # Navigation
     OnLoadSignalButtonClicked = None
     OnSaveSignalButtonClicked = None
     OnGeneratorOpenCommand = None
@@ -14,6 +14,9 @@ class MainInterface(tk.Tk):
     OnSignalFilteringOpenCommand = None
 
     OnExit = None
+    
+    OnAboutMenu = None
+    OnContributionMenu = None
 # Manipulations
     OnAddSignalsButtonClicked = None
     OnSubtractSignalsButtonClicked = None
@@ -21,9 +24,8 @@ class MainInterface(tk.Tk):
 
     OnCombineSignals = None
     OnAccumulateSignals = None
-    
-    
-    
+
+
 # Quantization
     OnMenuOpenQuantizerClicked = None
     OnQuantizeButtonClicked = None
@@ -62,7 +64,7 @@ class MainInterface(tk.Tk):
     def RenderGui(self):
         self.__drawGui()
 ################################### Funcs #####################################
-#############################################################################       GETTERS
+# GETTERS
 
     def GetStatusText(self):
         return self.controls["StatusLabel"]
@@ -96,7 +98,7 @@ class MainInterface(tk.Tk):
 
     def GetShiftValue(self):
         return self.shiftAmountVar.get()
-    
+
     def GetIfShiftingFoldedSignal(self):
         return bool(self.boolShiftFoldedSignal.get())
 
@@ -118,13 +120,13 @@ class MainInterface(tk.Tk):
         x = int(ax_str[1])
         y = int(ax_str[3])
         return (x, y)
-    
+
     def GetFourierPhaseShiftAxis(self):
         ax_str = self.fourier_phase_shift_waxis.get()
         x = int(ax_str[1])
         y = int(ax_str[3])
         return (x, y)
-    
+
     def GetManipulationOperationsAxis(self):
         ax_str = self.manp_working_axis.get()
         x = int(ax_str[1])
@@ -137,41 +139,45 @@ class MainInterface(tk.Tk):
         y = int(ax_str[3])
         return (x, y)
 
-    def GetAxis(self, i, j, page = None):
+    def GetAxis(self, i, j, page=None):
         if page is None:
             page = self.active_page
         return page.signalPlotters['plotters_axis'][0][i, j]
-    
+
     def GetPlottingPages(self):
         return self.controls['plotters_pages']
 
     def GetFourierSamplingFreq(self):
         return self.fourier_sampling_frequence.get()
-#############################################################################       PLOTTERS
+# PLOTTERS
+
     def ChangePlotterTitle(self, plotterName, plotterTitle):
         self.signalPlotters[plotterName][0].configure(title=plotterTitle)
 
     def DrawPlotters(self):
         plotters_pages = self.controls['plotters_pages']
-        i=0
-        for page,btn in plotters_pages:
-            i+=1
+        i = 0
+        for page, btn in plotters_pages:
+            i += 1
          #   btn.configure(text = 'Plotters {0}'.format(i))
             setattr(page, 'signalPlotters', {})
             tk.Grid.rowconfigure(page, 1, weight=1)
             tk.Grid.columnconfigure(page, 1, weight=1)
             GUI.DrawAxisArray(page, name='plotters_axis', position=(
                 1, 0), columnSpan=2,  sticky=tk.NSEW)
-            page.signalPlotters['plotters_axis'][0][0,0].set(title = 'Plotter {0} Workspace'.format(i))
+            page.signalPlotters['plotters_axis'][0][0, 0].set(
+                title='Plotter {0} Workspace'.format(i))
             page.signalPlotters['plotters_axis'][1].draw()
         self.active_page = self.controls['plotters_pages'][0][0]
-            
+
     def create_new_page(self, page, btn):
         setattr(page, 'signalPlotters', {})
         tk.Grid.rowconfigure(page, 1, weight=1)
         tk.Grid.columnconfigure(page, 1, weight=1)
-        GUI.DrawAxisArray(page, name='plotters_axis', position=(1, 0), columnSpan=2,  sticky=tk.NSEW)
-        page.signalPlotters['plotters_axis'][0][0,0].set(title = 'Plotter {0} Workspace'.format(len(self.controls['plotters_pages'])))
+        GUI.DrawAxisArray(page, name='plotters_axis', position=(
+            1, 0), columnSpan=2,  sticky=tk.NSEW)
+        page.signalPlotters['plotters_axis'][0][0, 0].set(
+            title='Plotter {0} Workspace'.format(len(self.controls['plotters_pages'])))
         page.signalPlotters['plotters_axis'][1].draw()
 
     def activate_page(self, page):
@@ -187,19 +193,18 @@ class MainInterface(tk.Tk):
     def repaint_axis(self):
         self.active_page.signalPlotters['plotters_axis'][1].draw()
 
-    def page_delete_callback(self, page, del_btn, pg_btn, index ):
+    def page_delete_callback(self, page, del_btn, pg_btn, index):
         result = GUI.ShowConfirmMBox("Delete Page?", "Are you sure?")
         if result:
             del(self.controls['plotters_pages'][index])
-            
+
             if self.active_page is page:
                 next_page = self.GetPlottingPages()[index-1]
                 next_page[0].lift()
-                next_page[1].configure(foreground = 'green')
+                next_page[1].configure(foreground='green')
             del_btn.destroy()
             pg_btn.destroy()
             page.destroy()
-
 
     def DrawResultPlotter(self, xlabel, ylabel, _title):
         GUI.DrawSignalPlot(self, name="resultPlotter",
@@ -212,7 +217,7 @@ class MainInterface(tk.Tk):
                            signalData=[], position=(1, 0), xLabel=xlabel, yLabel=ylabel,
                            owner=self.previewPanel, sticky=tk.NSEW, text=_title)
 
-  
+
 ################################### Private ###################################
 ###############################################################################
 
@@ -235,7 +240,7 @@ class MainInterface(tk.Tk):
                              command=self.OnLoadSignalButtonClicked)
         filemenu.add_command(label="Save",
                              command=self.OnSaveSignalButtonClicked)
-        filemenu.add_command(label= "Signal Filtering",
+        filemenu.add_command(label="Signal Filtering",
                              command=self.OnSignalFilteringOpenCommand)
         filemenu.add_separator()
         filemenu.add_command(label="Exit", command=self.OnExit)
@@ -278,13 +283,13 @@ class MainInterface(tk.Tk):
             label="Apply Inverse FFT", command=self.OnApplyInverseFastFourierTransformCommand)
         operations_menu.add_cascade(
             label="Fourier Transform", menu=fourier_submenu)
-        
+
         menubar.add_cascade(label="Operations", menu=operations_menu)
 
         help_meunbar = tk.Menu(menubar, tearoff=0)
-        help_meunbar.add_cascade(label="About", command=lambda: print("About"))
+        help_meunbar.add_cascade(label="About", command=self.OnAboutMenu)
         help_meunbar.add_command(label="Contribution",
-                                 command=lambda: print("Cont"))
+                                 command=self.OnContributionMenu)
         menubar.add_cascade(label="Help", menu=help_meunbar)
         self.configure(menu=menubar)
 
@@ -408,8 +413,10 @@ class MainInterface(tk.Tk):
                         position=(1, 1), owner=ffBox, sticky=tk.NE)
 
         self.fourier_sampling_frequence = tk.IntVar(self, 1000)
-        GUI.DrawLabel(self, name = 'ftfs', text='Sampling Frequency:', position=(2,0), owner = ffBox, sticky= tk.NW)
-        GUI.DrawEntry(self, self.fourier_sampling_frequence, name= 'ftfs_entry', position=(2,1), owner = ffBox, sticky= tk.NE)
+        GUI.DrawLabel(self, name='ftfs', text='Sampling Frequency:',
+                      position=(2, 0), owner=ffBox, sticky=tk.NW)
+        GUI.DrawEntry(self, self.fourier_sampling_frequence,
+                      name='ftfs_entry', position=(2, 1), owner=ffBox, sticky=tk.NE)
 
         GUI.DrawGroupBox(self, name='stdft', columnSpan=2, padX=5, padY=5,
                          text='Standard Fourier Transform', owner=ffBox, position=(3, 0), sticky=tk.NSEW)
@@ -466,17 +473,17 @@ class MainInterface(tk.Tk):
             2, 0), columnSpan=2, owner=signal_shift_box, onClickCommand=self.OnShiftSignal, sticky=tk.NSEW)
 
         GUI.DrawButton(self, name='fld_btn', text='Fold Signal', padX=5, padY=5,
-                       owner=manpBox, sticky=tk.NSEW, position=(2, 0), columnSpan=2, onClickCommand= self.OnFoldSignal)
+                       owner=manpBox, sticky=tk.NSEW, position=(2, 0), columnSpan=2, onClickCommand=self.OnFoldSignal)
 
-        #Convolution
+        # Convolution
         GUI.DrawGroupBox(self, name='convBox', text='Convlution / Correlation', position=(
             4, 0), owner=operationsBox, sticky=tk.NSEW)
         convBox = self.controls['convBox']
-        
+
         self.conv_working_axis = tk.StringVar(self, '(0,1)')
-        
+
         tk.Grid.columnconfigure(convBox, 0, weight=1)
-        
+
         GUI.DrawLabel(self, name='axlbl', text='Axis:',
                       position=(0, 0), owner=convBox, sticky=tk.NW)
 
@@ -485,12 +492,12 @@ class MainInterface(tk.Tk):
 
         GUI.DrawButton(self, name='convoluteSignal', padX=5, padY=0, text='Convolute Signal', position=(
             1, 0), columnSpan=2, owner=convBox, onClickCommand=self.OnConvluteSignal, sticky=tk.NSEW)
-        
+
         GUI.DrawButton(self, name='corSignal', padX=5, padY=0, text='Correlate Signal', position=(
             2, 0), columnSpan=2, owner=convBox, onClickCommand=self.OnCorrelateSignal, sticky=tk.NSEW)
         GUI.DrawButton(self, name='corNormSignal', padX=5, padY=0, text='Correlate Signal(Normalized)', position=(
             3, 0), columnSpan=2, owner=convBox, onClickCommand=self.OnNormalizedCorrelation, sticky=tk.NSEW)
-        
+
     # Preview Panel
         tk.Grid.columnconfigure(self, 1, weight=1)
         tk.Grid.rowconfigure(self, 1, weight=1)
@@ -502,9 +509,10 @@ class MainInterface(tk.Tk):
 
         self.previewPanel = previewPanel
         GUI.DrawLabel(self, name="Preview",
-                      text="Each Signal has a unique color!",
+                      text="Workspace Signals!",
                       position=(0, 0), owner=previewPanel,
                       columnSpan=1, sticky=tk.NSEW)
-        GUI.CreateContainer(self, pagesCount= 2, page_text_prefix='Plotters', onAddNewPageCommand = self.create_new_page, activationCallBack= self.activate_page,deletePageCallback= self.page_delete_callback, name = 'plotters_pages' ,position= (1,0), owner= previewPanel)
+        GUI.CreateContainer(self, pagesCount=2, page_text_prefix='Plotters', onAddNewPageCommand=self.create_new_page, activationCallBack=self.activate_page,
+                            deletePageCallback=self.page_delete_callback, name='plotters_pages', position=(1, 0), owner=previewPanel)
     # Signal Plot
         self.DrawPlotters()

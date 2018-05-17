@@ -35,6 +35,8 @@ class MainInterfaceBinder:
         self.app.OnSaveSignalButtonClicked = self.SaveSignal
         self.app.OnGeneratorOpenCommand = self.OpenGenerator
         self.app.OnSignalFilteringOpenCommand = self.OpenSignalFilter
+        self.app.OnAboutMenu = self.AboutMenu
+        self.app.OnContributionMenu = self.ContributeMenu
         self.app.OnExit = self.OnExit
 
         self.app.OnAddSignalsButtonClicked = self.AddSignals
@@ -64,6 +66,12 @@ class MainInterfaceBinder:
             is_normalized=True)
 
         self.app.RenderGui()
+
+    def AboutMenu(self):
+        GUI.ShowMsgBox(title = 'About', message='Created by Ahmed Sallam\n\nlnkdin: linkedin.com/in/ahmed-yehia-sallam')
+
+    def ContributeMenu(self):
+        GUI.ShowMsgBox(title = 'Contribute', message= 'Contribute via GitHub Repo. on\n\n https://github.com/Ahmed-YehiaGPEL/SC-DSP-Package')
 
     def OnExit(self):
         self.app.destroy()
@@ -247,7 +255,7 @@ class MainInterfaceBinder:
 
         return final_fourier
 
-    def PlotAmblitude(self, sampled_frequency=4, title="AX-{0} - Amblitude vs Time"):
+    def PlotAmblitude(self, sampled_frequency=4, title="AX-{0} - Amblitude vs Freq"):
         xValue, amblitudes = fft.get_amblitudes(
             self.fourier_output, sampled_frequency)
         signal = []
@@ -257,14 +265,14 @@ class MainInterfaceBinder:
         self.PlotOnAxis(signal, working_axis, signalName='Amblitude',
                         axis_title=title.format(working_axis))
 
-    def PlotPhaseShift(self, sampled_frequency=4, title="AX-{0} - Phase shift vs Time"):
+    def PlotPhaseShift(self, sampled_frequency=4, title="AX-{0} - Phase shift vs Freq"):
         xValue, phase_shifts = fft.get_phase_shift(
             self.fourier_output, sampled_frequency)
         signal = []
         for i in range(len(xValue)):
             signal.append((xValue[i], phase_shifts[i]))
         working_axis = self.app.GetFourierPhaseShiftAxis()
-        self.PlotOnAxis(signal, working_axis, signalName='Phase vs Time',
+        self.PlotOnAxis(signal, working_axis, signalName='Phase vs Freq',
                         axis_title=title.format(working_axis))
 
     def ApplyFastFourier(self, bool_is_inverse):
@@ -278,9 +286,9 @@ class MainInterfaceBinder:
             signal=self.LoadedSignals[self.SignalPath].GetData(), bool_is_inverse=bool_is_inverse)
         fs = self.app.GetFourierSamplingFreq()
         self.PlotAmblitude(sampled_frequency=fs,
-                           title="AX-{0} - Amblitude vs Time - FFT")
+                           title="AX-{0} - Amblitude vs Freq - FFT")
         self.PlotPhaseShift(sampled_frequency=fs,
-                            title="AX-{0} - Phase shift vs Time - FFT")
+                            title="AX-{0} - Phase shift vs Freq - FFT")
 
     def OnShiftSignal(self):
         shift_val = self.app.GetShiftValue()
@@ -291,7 +299,7 @@ class MainInterfaceBinder:
 
         selected_dim = self.app.GetManipulationOperationsAxis()
         self.PlotOnAxis(shifted, axis_dim=selected_dim,
-                        signalName='Shifted Signal')
+                        signalName='Shifted Signal', axis_title="AX-{0} - Shifted Signal".format(selected_dim))
 
     def OnFoldSignal(self):
         signal = self.LoadedSignals[self.SignalPath].GetData()
@@ -300,7 +308,7 @@ class MainInterfaceBinder:
         selected_dim = self.app.GetManipulationOperationsAxis()
 
         self.PlotOnAxis(folded, axis_dim=selected_dim,
-                        signalName='Fodled Signal')
+                        signalName='Fodled Signal', axis_title="AX-{0} - Folded Signal".format(selected_dim))
 
     def OnCombineSignals(self):
         raise "Not Implemented Yet"

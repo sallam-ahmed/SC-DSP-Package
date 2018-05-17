@@ -1,17 +1,18 @@
-import matplotlib
-matplotlib.use('TkAgg')
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import matplotlib.pyplot as plt
-
 import tkinter as tk
-from GUIHelper._GUI import GUI
+
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.signal as my_dsp_package
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 import DSP.filters as fls
 from DSP.digital_signal import DS_Signal
-import numpy as np
-
 from DSP.signal_op import convolve_signal, shift_signal
-import scipy.signal as my_dsp_package
+from GUIHelper._GUI import GUI
+
+matplotlib.use('TkAgg')
+
 
 class DSignalFilter(tk.Tk):
     OnLoadSignal = None
@@ -30,6 +31,7 @@ class DSignalFilter(tk.Tk):
     def Show(self):
         self.focus()
         self.mainloop()
+    
     def GetSelectedFilter(self):
         return self.selected_filter_entry.get()
     
@@ -44,7 +46,6 @@ class DSignalFilter(tk.Tk):
     def repaint_axis(self):
         self.signalPlotters['axis_plotters'][1].draw()
 
-
     def __drawGui__(self):
         GUI.DrawButton(self, name= 'loadBtn', text = 'Load Signal', position=(0,0),columnSpan=2, sticky= tk.NSEW, onClickCommand= self.OnLoadSignal)
         GUI.DrawButton(self, name= 'aptn', text = 'Apply Filter', position=(1,0),columnSpan=2, sticky= tk.NSEW, onClickCommand= self.OnApplyFilter)
@@ -54,9 +55,6 @@ class DSignalFilter(tk.Tk):
 
         GUI.DrawLabel(self, name='lbl1', text= 'Sampling Frequency(hz)', position=(1,0), owner= fprop, sticky= tk.NW)
         GUI.DrawEntry(self, variable= self.fs_entry, name = 'sampling_freq', position=(1,1), padX= 5, sticky= tk.NE, owner= fprop)        
-        
-        # GUI.DrawLabel(self, name='lbl2', text= 'Transition Width(hz)', position=(2,0), owner= fprop)
-        # GUI.DrawEntry(self, variable= self.tw_entry, name = 'tw', position=(2,1), padX= 5, sticky= tk.NE, owner= fprop)        
         
         GUI.DrawLabel(self, name='lbl3', text= 'Stop Attenuation(db)', position=(2,0), owner= fprop)
         GUI.DrawEntry(self, variable= self.sta_entry, name = 'st', position=(2,1), padX= 5, sticky= tk.NE, owner= fprop)        
@@ -81,8 +79,6 @@ class DSignalFilter(tk.Tk):
 
         GUI.DrawOptions(self, self.selected_filter_entry, *filters, name= 'op1', position=(4,2), owner= fprop)
 
-
-        #GUI.DrawAxisArray(self, name= 'axis_plotters', text='Signal View', position=(5,0), columnSpan= 2)
         self.fig, self.axarr = plt.subplots(2, sharex=True)
         self.axarr[0].plot([], [])
         self.axarr[0].grid(True)
@@ -106,8 +102,6 @@ class DSignalFilter(tk.Tk):
         self.band2_entry  =tk.DoubleVar(self, 1.0)
 
         self.selected_filter_entry = tk.StringVar(self, 'High')
-
-
 
 class DSignalFilterBinder:
     LoadedSignals = {}
@@ -156,6 +150,7 @@ class DSignalFilterBinder:
             self.PlotOnAxis(signalData.GetData(), axis_dim=0, signalName=signalLabel,
                             signalMarker=self.signalMarkers[myMarkerIndex])
         pass
+   
     def ApplyFilter(self):
         selected_filter = self.app.GetSelectedFilter()
         sampling_frequency= float(self.app.fs_entry.get())
@@ -170,20 +165,20 @@ class DSignalFilterBinder:
         fil = None
         if selected_filter == 'Low':
             fir = fls.FIR_FILTERS.Low
-            fil = fls.apply_filter(self.LoadedSignal.GetData(), sampling_frequency= sampling_frequency, stop_attenuation= float(self.app.sta_entry.get()),
-            transition_band= float(self.app.tband_entry.get()), cutoff_frequency= float(self.app.cutoff_entry.get()),filter_type= fir )
+            fil = fls.apply_filter(self.LoadedSignal.GetData(), sampling_frequency= sampling_frequency, stop_attenuation= stop_attenuation,
+            transition_band= transition_band, cutoff_frequency= cutoff_frequency,filter_type= fir )
         elif selected_filter =='High':
             fir = fls.FIR_FILTERS.High
-            fil = fls.apply_filter(self.LoadedSignal.GetData(), sampling_frequency= float(self.app.fs_entry.get()), stop_attenuation= float(self.app.sta_entry.get()),
-            transition_band= float(self.app.tband_entry.get()), cutoff_frequency= float(self.app.cutoff_entry.get()),filter_type= fir )
+            fil = fls.apply_filter(self.LoadedSignal.GetData(), sampling_frequency= float(self.app.fs_entry.get()), stop_attenuation= stop_attenuation,
+            transition_band= transition_band, cutoff_frequency= cutoff_frequency,filter_type= fir )
         elif selected_filter == 'Bandpass':
             fir = fls.FIR_FILTERS.BandPass
-            fil = fls.apply_band_filter(self.LoadedSignal.GetData(), sampling_frequency= float(self.app.fs_entry.get()), stop_attenuation= float(self.app.sta_entry.get()),
-            transition_band= float(self.app.tband_entry.get()), band1= band1, band2 = band2,filter_type= fir )
+            fil = fls.apply_band_filter(self.LoadedSignal.GetData(), sampling_frequency= float(self.app.fs_entry.get()), stop_attenuation= stop_attenuation,
+            transition_band= transition_band, band1= band1, band2 = band2,filter_type= fir )
         elif selected_filter == 'Bandreject':
             fir = fls.FIR_FILTERS.BandReject
-            fil = fls.apply_band_filter(self.LoadedSignal.GetData(), sampling_frequency= float(self.app.fs_entry.get()), stop_attenuation= float(self.app.sta_entry.get()),
-            transition_band= float(self.app.tband_entry.get()), band1= band1, band2 = band2,filter_type= fir )
+            fil = fls.apply_band_filter(self.LoadedSignal.GetData(), sampling_frequency= float(self.app.fs_entry.get()), stop_attenuation= stop_attenuation,
+            transition_band= transition_band, band1= band1, band2 = band2,filter_type= fir )
 
         yvals = [x[1] for x in self.LoadedSignal.GetData()]
         filter_yvals = [x[1] for x in fil]
