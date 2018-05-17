@@ -1,3 +1,10 @@
+__author__ = "Ahmed Sallam"
+__copyright__ = "Copyright 2018, SC-18-DSP Pacakge"
+__credits__ = ["Ahmed Sallam"]
+__license__ = "GPL"
+__version__ = "1.0.0"
+__email__ = "ahmed.yehia.1177@gmail.com"
+
 import tkinter as tk
 import tkinter.messagebox as messagebox
 import matplotlib
@@ -320,3 +327,7 @@ class GUI:
     @staticmethod
     def ShowConfirmMBox(title, message):
         return messagebox.askyesno(title= title, message= message)
+    
+    @staticmethod
+    def ShowMsgBox(title, message):
+        return messagebox.showinfo(title= title, message= message)
