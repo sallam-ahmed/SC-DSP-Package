@@ -127,11 +127,6 @@ def remove_dc_component(signal):
     fft_signal[0] = 0
     no_dc_signal = apply_fft(fft_signal, True)
 
-    # _signal = [signal[k][1] for k in range(len(signal))]
-    # fft_signal = np.fft.fft(_signal)
-    # fft_signal[0] = 0a
-    # no_dc_signal = np.fft.ifft(fft_signal)
-
     signal_values = [round(no_dc_signal[k].real, 4) for k in range(len(no_dc_signal))]
     final_signal = [(signal[k][0], signal_values[k]) for k in range(len(no_dc_signal))] 
 
@@ -176,9 +171,6 @@ def convolve_signal(signal, kernel):
         current_comp_num+=1
     return result
 
-def test_convolve():
-    pass
-
 def corelate_signal(signal, kernel, is_periodic = False):
     return __correlate_signal(signal, kernel, periodic= is_periodic)
 
@@ -197,46 +189,35 @@ def __correlate_signal(signal, kernel, periodic = False, normalized = False):
     
     if signal1_length != kernel_length:
         num_of_samples = signal1_length + kernel_length - 1
-        signal1_augmentingzeros = num_of_samples - signal1_length
-        kernel_augmentingzeros = num_of_samples - kernel_length
-
-        # add augmenting zeros
-        for i in range(0, signal1_augmentingzeros):
+        
+        #Augmenting Zeros
+        for i in range(0, num_of_samples - signal1_length): 
             signal1values.append(0)
 
-        for i in range(0, kernel_augmentingzeros):
+        for i in range(0, num_of_samples - kernel_length):
             kernelvalues.append(0)
-        # print(signal1values)
-        # print(kernelvalues)
 
     kernel_leftrotations = []
     
     if periodic:
-        print("periodic")
         #Kernel Rotation
         for i in range(0, num_of_samples):
-            first_element = kernelvalues[0]
-            del(kernelvalues[0])
-            kernelvalues.append(first_element)
-            new_list = kernelvalues[:]
-            kernel_leftrotations.append(new_list)
-        last_rotation = kernel_leftrotations[-1]
-        del(kernel_leftrotations[-1])
+            kernelvalues = kernelvalues[1:] + [kernelvalues[0]]
+            nl = kernelvalues[:]
+            kernel_leftrotations.append(nl)
         
-        kernel_leftrotations = [last_rotation] + kernel_leftrotations
+        kernel_leftrotations = [kernel_leftrotations[-1]] + kernel_leftrotations[:-1]
 
     else:
-        print("non periodic")
-        signal1values2_tmp = list(kernelvalues)
-        kernel_leftrotations = [signal1values2_tmp] + kernel_leftrotations
+        kernel_leftrotations = [list(kernelvalues)] + kernel_leftrotations
         # get rotations of kernel
         for i in range(0, num_of_samples):
-            del kernelvalues[0]
+            del(kernelvalues[0])
             kernelvalues.append(0)
             new_list = kernelvalues[:]
             kernel_leftrotations.append(new_list)
 
-        del kernel_leftrotations[-1]
+        del(kernel_leftrotations[-1])
 
     # cross correlate the kernel rotations with kernel
     resulted_signal = []
@@ -252,7 +233,6 @@ def __correlate_signal(signal, kernel, periodic = False, normalized = False):
         current_sample_number += 1
     
     if normalized:
-        print("Exec Normalized")
         signal1_sum = np.sum(np.square(signal1values))
         kernel_sum = np.sum(np.square(kernelvalues))
         normalization_factor = np.sqrt(signal1_sum * kernel_sum) / num_of_samples

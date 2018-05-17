@@ -177,6 +177,7 @@ class GUI:
                         columnspan=columnSpan, rowspan=rowSpan,
                         sticky=sticky)
         rootApp.controls[name] = newControl
+        return rootApp.controls[name]
 
     @staticmethod
     def DrawOptions(rootApp,
@@ -265,15 +266,15 @@ class GUI:
                       yLabel="voltage (mV)",
                       position=(10, 10),
                       padX=0, padY=0,
-                      sticky=(tk.S, tk.W), columnSpan=1, rowSpan=1,
+                      sticky=(tk.S, tk.W), columnSpan=1, rowSpan=1,nrows = 2, ncols = 2,
                       owner=None):
         if owner == None:
             owner = rootApp
-        fig, axis_array = plt.subplots(2, 2)
+        fig, axis_array = plt.subplots(nrows, ncols)
         plt.tight_layout()
 
-        for i in range(2):
-            for j in range(2):
+        for i in range(nrows):
+            for j in range(ncols):
                 axis_array[i, j].grid('on')
                 axis_array[i, j].set(
                     title='AX [{0},{1}] - Not Initialized!'.format(i, j))

@@ -5,7 +5,7 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
-
+from SignalOperator.signal_filtering import DSignalFilter, DSignalFilterBinder
 from DSP import fft, signal_op
 from GUIHelper._GUI import GUI
 from SignalGenerator.iDSignalGenerator import DSignalGenerator
@@ -34,7 +34,9 @@ class MainInterfaceBinder:
         self.app.OnLoadSignalButtonClicked = self.LoadSignal
         self.app.OnSaveSignalButtonClicked = self.SaveSignal
         self.app.OnGeneratorOpenCommand = self.OpenGenerator
+        self.app.OnSignalFilteringOpenCommand = self.OpenSignalFilter
         self.app.OnExit = self.OnExit
+        
         self.app.OnAddSignalsButtonClicked = self.AddSignals
         self.app.OnSubtractSignalsButtonClicked = self.SubtractSignals
         self.app.OnMultiplySignalsButtonClicked = self.MultiplySignals
@@ -69,6 +71,11 @@ class MainInterfaceBinder:
         self.signalGen = DSignalGenerator(self.app.master)
         signalGenBinder = DSignalGeneratorEvents(self.signalGen)
         signalGenBinder.BindEvents()
+    
+    def OpenSignalFilter(self):
+        self.signalFilter = DSignalFilter(self.app.master)
+        signalFilterBinder = DSignalFilterBinder(self.signalFilter)
+        signalFilterBinder.BindEvents()
 
     def OnClearSignals(self):
         self.LoadedSignals = {}
@@ -310,9 +317,20 @@ class MainInterfaceBinder:
         raise "Not implemented yet"
 
     def OnConvluteSignal(self):
+
         loaded_signals = self.__get_loaded_signals()
         first = loaded_signals[0]
         second = loaded_signals[1]
+        # if True: 
+        #     fft1 = fft.apply_fft(first.GetData(), False)
+        #     fft2 = fft.apply_fft(second.GetData(), False)
+        #     res = np.array(fft1) * np.array(fft2)
+        #     w_axis = self.app.GetConvlutionWorkingAxis()
+        #     result_signal =  fft.apply_fft(res, True)
+
+        #     self.PlotOnAxis(result_signal, axis_dim=w_axis, signalMarker='ob',
+        #                 signalName='Convolution Result', axis_title="AX-{0} - Signals Convolution".format(w_axis))
+
         print('Using first two signals only')
         result_signal = signal_op.convolve_signal(
             first.GetData(), second.GetData())
@@ -341,7 +359,7 @@ class MainInterfaceBinder:
         w_axis = self.app.GetConvlutionWorkingAxis()
 
         self.PlotOnAxis(result_signal, axis_dim=w_axis, signalMarker='ob',
-                        signalName='Convolution Result', axis_title="AX-{0} - Signals{1}Correlation".format(w_axis, '' if not is_normalized else 'Normalized'))
+                        signalName='Correlation Result', axis_title="AX-{0} - Signals{1}Correlation".format(w_axis, '' if not is_normalized else 'Normalized'))
 
     def __get_loaded_signals_data(self):
         signals = []

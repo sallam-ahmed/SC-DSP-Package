@@ -1,13 +1,18 @@
 import tkinter as tk
+import scipy.signal
+
 from GUIHelper._GUI import GUI
 
 
 class MainInterface(tk.Tk):
     ################################## Events #####################################
-    # Navigation
+# Navigation
     OnLoadSignalButtonClicked = None
     OnSaveSignalButtonClicked = None
     OnGeneratorOpenCommand = None
+
+    OnSignalFilteringOpenCommand = None
+
     OnExit = None
 # Manipulations
     OnAddSignalsButtonClicked = None
@@ -16,7 +21,9 @@ class MainInterface(tk.Tk):
 
     OnCombineSignals = None
     OnAccumulateSignals = None
-
+    
+    
+    
 # Quantization
     OnMenuOpenQuantizerClicked = None
     OnQuantizeButtonClicked = None
@@ -228,6 +235,8 @@ class MainInterface(tk.Tk):
                              command=self.OnLoadSignalButtonClicked)
         filemenu.add_command(label="Save",
                              command=self.OnSaveSignalButtonClicked)
+        filemenu.add_command(label= "Signal Filtering",
+                             command=self.OnSignalFilteringOpenCommand)
         filemenu.add_separator()
         filemenu.add_command(label="Exit", command=self.OnExit)
 
@@ -269,6 +278,7 @@ class MainInterface(tk.Tk):
             label="Apply Inverse FFT", command=self.OnApplyInverseFastFourierTransformCommand)
         operations_menu.add_cascade(
             label="Fourier Transform", menu=fourier_submenu)
+        
         menubar.add_cascade(label="Operations", menu=operations_menu)
 
         help_meunbar = tk.Menu(menubar, tearoff=0)
