@@ -3,7 +3,7 @@ from DSP.digital_signal import ReadDSFileFormat, GenerateSignal
 import tkinter as tk
 
 
-class DSignalGeneratorEvents:
+class SignalGeneratorWindowBinder:
 
     def __init__(self, app):
         self.app = app

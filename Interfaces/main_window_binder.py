@@ -5,12 +5,13 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import animation
-from SignalOperator.signal_filtering import DSignalFilter, DSignalFilterBinder
+
 from DSP import fft, signal_op
-from GUIHelper._GUI import GUI
-from SignalGenerator.iDSignalGenerator import DSignalGenerator
-from SignalGenerator.iDSignalGeneratorBinder import DSignalGeneratorEvents
 from DSP.digital_signal import DS_Signal, ReadDSFileFormat
+from GUIHelper._GUI import GUI
+from Interfaces.signal_filtering import DSignalFilter, DSignalFilterBinder
+from Interfaces.signal_generator_binder import SignalGeneratorWindowBinder
+from Interfaces.signal_generator_window import SignalGeneratorWindow
 
 
 class MainInterfaceBinder:
@@ -35,7 +36,7 @@ class MainInterfaceBinder:
         self.app.OnGeneratorOpenCommand = self.OpenGenerator
         self.app.OnSignalFilteringOpenCommand = self.OpenSignalFilter
         self.app.OnExit = self.OnExit
-        
+
         self.app.OnAddSignalsButtonClicked = self.AddSignals
         self.app.OnSubtractSignalsButtonClicked = self.SubtractSignals
         self.app.OnMultiplySignalsButtonClicked = self.MultiplySignals
@@ -57,8 +58,10 @@ class MainInterfaceBinder:
             True)
 
         self.app.OnConvluteSignal = self.OnConvluteSignal
-        self.app.OnCorrelateSignal = lambda: self.OnCorrelateSignal(is_normalized = False)
-        self.app.OnNormalizedCorrelation = lambda: self.OnCorrelateSignal(is_normalized = True)
+        self.app.OnCorrelateSignal = lambda: self.OnCorrelateSignal(
+            is_normalized=False)
+        self.app.OnNormalizedCorrelation = lambda: self.OnCorrelateSignal(
+            is_normalized=True)
 
         self.app.RenderGui()
 
@@ -67,10 +70,10 @@ class MainInterfaceBinder:
         sys.exit()
 
     def OpenGenerator(self):
-        self.signalGen = DSignalGenerator(self.app.master)
-        signalGenBinder = DSignalGeneratorEvents(self.signalGen)
+        self.signalGen = SignalGeneratorWindow(self.app.master)
+        signalGenBinder = SignalGeneratorWindowBinder(self.signalGen)
         signalGenBinder.BindEvents()
-    
+
     def OpenSignalFilter(self):
         self.signalFilter = DSignalFilter(self.app.master)
         signalFilterBinder = DSignalFilterBinder(self.signalFilter)
@@ -310,7 +313,7 @@ class MainInterfaceBinder:
         loaded_signals = self.__get_loaded_signals()
         first = loaded_signals[0]
         second = loaded_signals[1]
-        # if True: 
+        # if True:
         #     fft1 = fft.apply_fft(first.GetData(), False)
         #     fft2 = fft.apply_fft(second.GetData(), False)
         #     res = np.array(fft1) * np.array(fft2)
@@ -334,7 +337,7 @@ class MainInterfaceBinder:
         first = loaded_signals[0]
         second = []
         periodic = True
-        if len(loaded_signals) == 1: # Auto Correlation
+        if len(loaded_signals) == 1:  # Auto Correlation
             second = loaded_signals[0]
         else:
             second = loaded_signals[1]

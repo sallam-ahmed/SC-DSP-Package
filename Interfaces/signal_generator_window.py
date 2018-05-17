@@ -2,7 +2,7 @@ import tkinter as tk
 from GUIHelper._GUI import GUI
 
 
-class DSignalGenerator(tk.Tk):
+class SignalGeneratorWindow(tk.Tk):
 
     OnGenerateSignalButtonClick = None
     ####################################
